@@ -1,4 +1,4 @@
-
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
@@ -9,7 +9,7 @@ import numpy as np
 
 np.random.seed(324)
 
-Ns = 64
+Ns = 8
 
 Ts = 1
 L = 16
@@ -17,7 +17,7 @@ t_step = Ts / L
 factor_ruido = 0.25
 
 
-rolloff = 0.5
+rolloff = 0.1
 # 1. Generacion de onda del pulso
 pt = rcosdesign(rolloff, 6, L, 'sqrt')
 pt = pt / (np.max(np.abs(pt)))  # rescaling to match rcosine
@@ -26,24 +26,41 @@ pt = pt / (np.max(np.abs(pt)))  # rescaling to match rcosine
 data_bit = (np.random.rand(Ns) > 0.5).astype(int)
 print(data_bit)
 
+
+
 # 3. Unipolar a Bipolar (modulacion de amplitud)
 amp_modulated = 2 * data_bit - 1  # 0=> -1,  1=>1
-
+#amp_modulated = data_bit
 # 4. Modulacion de pulsos
+print(amp_modulated)
+
+
+plt.figure(1)
+plt.figure(figsize=(10, 2))
+plt.plot(data_bit, drawstyle='steps-post', label='Señal original')
+plt.plot(amp_modulated, drawstyle='steps-post', label='NRZ Polar')
+plt.xlabel('Tiempo')
+plt.ylabel('Amplitud')
+plt.title('Codificación NRZ Polar')
+plt.legend()
+plt.grid()
+plt.show()
+
+
 impulse_modulated = np.zeros(Ns * L)
 for n in range(Ns):
     delta_signal = np.concatenate(([amp_modulated[n]], np.zeros(L - 1)))
     impulse_modulated[n * L: (n * L) + L] = delta_signal
     #impulse_modulated[n * L: (n + 1) * L] = delta_signal
 
-print(impulse_modulated)
+
 
 
 tx_signal = ss.convolve(impulse_modulated, pt, mode='same')
 
 # Grafica los pulsos
 t_tx = np.arange(0, len(impulse_modulated)) * t_step
-plt.figure(1)
+plt.figure(2)
 plt.plot(t_tx, impulse_modulated)
 plt.xlabel('Tiempo (s)')
 plt.ylabel('Amplitud')
@@ -53,7 +70,7 @@ plt.grid(True)
 
 # Grafica la señal transmitida
 t_tx = np.arange(0, len(tx_signal)) * t_step
-plt.figure(2)
+plt.figure(3)
 plt.plot(t_tx, tx_signal)
 plt.xlabel('Tiempo (s)')
 plt.ylabel('Amplitud')
@@ -61,7 +78,7 @@ plt.title('Señal Transmitida')
 plt.grid(True)
 
 
-plt.figure(3)
+plt.figure(4)
 plt.subplot(2,1,1)
 plt.stem(np.arange(t_step,Ns*Ts+t_step,t_step),impulse_modulated,markerfmt='.')
 plt.axis([0,Ns*Ts,-2*np.max(impulse_modulated),2*np.max(impulse_modulated)])
@@ -98,7 +115,7 @@ plt.grid(True)
 
 #Filtro acoplado tiene la misma forma que pt debido a su simetria
 filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
-
+filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
 
 
 
@@ -111,3 +128,5 @@ plt.ylabel('Amplitud')
 plt.title('Señal Filtrada')
 plt.grid(True)
 plt.show()
+
+sys.exit(0)
