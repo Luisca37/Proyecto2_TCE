@@ -14,7 +14,7 @@ Ns = 8
 Ts = 1
 L = 16
 t_step = Ts / L
-factor_ruido = 0.25
+factor_ruido = 1
 
 
 rolloff = 0.1
@@ -36,7 +36,6 @@ print(amp_modulated)
 
 
 plt.figure(1)
-plt.figure(figsize=(10, 2))
 plt.plot(data_bit, drawstyle='steps-post', label='Señal original')
 plt.plot(amp_modulated, drawstyle='steps-post', label='NRZ Polar')
 plt.xlabel('Tiempo')
@@ -44,7 +43,6 @@ plt.ylabel('Amplitud')
 plt.title('Codificación NRZ Polar')
 plt.legend()
 plt.grid()
-plt.show()
 
 
 impulse_modulated = np.zeros(Ns * L)
@@ -116,8 +114,8 @@ plt.grid(True)
 #Filtro acoplado tiene la misma forma que pt debido a su simetria
 filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
 filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
-
-
+print(filtro_acoplado)
+print(len(filtro_acoplado))
 
 #Grafica la señal Recibida
 t_rx = np.arange(0, len(filtro_acoplado)) * t_step
@@ -127,6 +125,28 @@ plt.xlabel('Tiempo (s)')
 plt.ylabel('Amplitud')
 plt.title('Señal Filtrada')
 plt.grid(True)
-plt.show()
 
+
+#---------------Decodificacion------------------#
+
+#Detector de Umbral
+bits_rx = []
+cont = L
+umbral = 0
+
+for i in filtro_acoplado:
+
+
+    if cont == L:
+        if i > umbral:
+            bits_rx.append(1)
+        else:
+            bits_rx.append(0)
+        cont = 0
+    cont+=1
+
+print(bits_rx)
+
+
+plt.show()
 sys.exit(0)
