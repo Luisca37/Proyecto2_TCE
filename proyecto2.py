@@ -5,16 +5,53 @@ import scipy.signal as ss
 from rcosdesign import rcosdesign
 import numpy as np
 
+#-----------Funciones-------------------#
+
+
+def detector_umbral(señal, umbral, L):
+    bits_rx = []
+    cont = L
+    umbral = 0
+    bits_con_error = 0
+    for i in señal:
+        if cont == L:
+            if i > umbral:
+                bits_rx.append(1)
+            else:
+                bits_rx.append(0)
+            
+            # Comparar con los bits originales y contar los errores
+            if bits_rx[-1] != data_bit[len(bits_rx) - 1]:
+                bits_con_error += 1 #se calcula los bits con error al comparar con dato original
+            
+            cont = 0
+        cont += 1
+
+    return bits_rx, bits_con_error
+
+
+#funcion que agrega ISI a la señal
+def isi(signal, L, isi_factor):
+    # Crear un filtro con forma de pulso rectangular y duración de L*isi_factor
+    isi_filter = np.ones(int(L * isi_factor))
+    # Normalizar el filtro para mantener la amplitud
+    isi_filter /= np.sum(isi_filter)
+
+    # Aplicar convolución para introducir ISI
+    isi_signal = np.convolve(signal, isi_filter, 'full')[:len(signal)]
+
+    return isi_signal
+
 
 
 np.random.seed(324)
 
-Ns = 64
+Ns = 16
 
 Ts = 1
 L = 16
 t_step = Ts / L
-factor_ruido = 0.25
+factor_ruido = 0.5
 
 
 rolloff = 0.75
@@ -93,51 +130,25 @@ plt.tight_layout()
 #---------------Canal------------------#    
 
 
-#Generar numeros aleatorios con distribucion normal
+#Generar numeros aleatorios con distribucion normal para simuar el ruido
 length_tx_signal=len(tx_signal)
 randn_array=factor_ruido*np.random.randn(1,length_tx_signal)
 
-#Se agrega ruido a la señal transmitida
-rx_signal=tx_signal+randn_array[0]
+
+#se agrega isi y ruido a la señal
+isi_factor = 1 # Valor mayor para un ISI más pronunciado
+
+rx_signal = isi(tx_signal, L, isi_factor)+randn_array[0]
 
 
-#Grafica la señal ruidosa
+
+# Graficar la señal con ISI y ruido
 t_rx = np.arange(0, len(rx_signal)) * t_step
-plt.figure(5)
+plt.figure(7)
 plt.plot(t_rx, rx_signal)
 plt.xlabel('Tiempo (s)')
 plt.ylabel('Amplitud')
-plt.title('Señal con ruido antes de filtrar')
-plt.grid(True)
-
-
-isi_factor = 1  # Valor mayor para un ISI más pronunciado
-
-# Crear un filtro con forma de pulso rectangular y duración de L*isi_factor
-isi_filter = np.ones(int(L * isi_factor))
-# Normalizar el filtro para mantener la amplitud
-isi_filter /= np.sum(isi_filter)
-
-# Aplicar convolución para introducir ISI
-isi_signal = np.convolve(tx_signal, isi_filter, 'full')[:len(tx_signal)]
-
-
-# Graficar la señal con ISI
-t_rx = np.arange(0, len(isi_signal)) * t_step
-plt.figure(7)
-plt.plot(t_rx, isi_signal)
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.title('Señal con ISI')
-plt.grid(True)
-
-# Graficar la señal con ISI
-t_rx = np.arange(0, len(isi_signal)) * t_step
-plt.figure(7)
-plt.plot(t_rx, isi_signal)
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.title('Señal con ISI')
+plt.title('Señal con ISI y ruido')
 plt.grid(True)
 
 
@@ -145,7 +156,7 @@ plt.grid(True)
 
 #----------------------------Receptor---------------#
 #Filtro acoplado tiene la misma forma que pt debido a su simetria
-filtro_acoplado = ss.convolve(isi_signal , pt, mode = 'same' )
+filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
 filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
 print(filtro_acoplado)
 print(len(filtro_acoplado))
@@ -162,29 +173,15 @@ plt.grid(True)
 
 #---------------Decodificacion------------------#
 
-#Detector de Umbral
-bits_rx = []
-cont = L
-umbral = 0
-bits_con_error = 0
-for i in filtro_acoplado:
-    if cont == L:
-        if i > umbral:
-            bits_rx.append(1)
-        else:
-            bits_rx.append(0)
-        
-        # Comparar con los bits originales y contar los errores
-        if bits_rx[-1] != data_bit[len(bits_rx) - 1]:
-            bits_con_error += 1
-        
-        cont = 0
-    cont += 1
+
+bits_rx, bits_con_error = detector_umbral(filtro_acoplado, 0, L)
 
 print("Bits originales:", data_bit)
 print("Bits detectados:", bits_rx)
 print("Número de errores:", bits_con_error)
-print(bits_rx)
+
+
+plt.show()
 
 
 plt.show()
