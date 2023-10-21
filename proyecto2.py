@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
+from reedsolo import RSCodec
 import numpy as np
 
 #-----------Funciones-------------------#
@@ -46,7 +47,7 @@ def isi(signal, L, isi_factor):
 
 np.random.seed(324)
 
-Ns = 16
+Ns = 64
 
 Ts = 1
 L = 16
@@ -180,8 +181,6 @@ print("Bits originales:", data_bit)
 print("Bits detectados:", bits_rx)
 print("Número de errores:", bits_con_error)
 
-
-plt.show()
 
 
 plt.show()
