@@ -24,17 +24,19 @@ def detector_umbral(señal, umbral, L):
     return bits_rx
 
 def contar_diferencias(array1, array2):
-    # Inicializar una variable para contar las diferencias
-    diferencias = 0
+    # Inicializar una lista para almacenar las posiciones de las diferencias
+    posiciones_errores = []
+    num_errores = 0  # Inicializar el contador de errores
 
     # Asegurarnos de que ambos arrays tengan la misma longitud
     if len(array1) == len(array2):
         # Comparar los elementos de los arrays uno por uno
         for i in range(len(array1)):
             if array1[i] != array2[i]:
-                diferencias += 1
+                posiciones_errores.append(i)  # Agregar la posición al resultado
+                num_errores += 1  # Incrementar el contador de errores
 
-        return diferencias
+        return posiciones_errores, num_errores
     else:
         return "Los arrays no tienen la misma longitud"
 
@@ -54,8 +56,8 @@ def isi(signal, L, isi_factor):
 
 np.random.seed(324)
 
-Ns = 12 #divisible por 4
-hamming_code = False
+Ns = 256 #divisible por 4
+hamming_code = True
 Ts = 1
 L = 16
 t_step = Ts / L
@@ -74,7 +76,7 @@ print(data_bit)
 
 #Codifica con o sin Hamming
 if hamming_code:
-    encoded_data = np.array(hamming.encode_frame(data_bit))
+    encoded_data = np.array(hamming.encode_frame(data_bit, 4))
 else        :
     encoded_data = data_bit
 Ns_code = len(encoded_data)
@@ -195,16 +197,17 @@ print('Bits detectados con detector de umbral: ', bits_rx, '\n')
 
 #se realiza la decodificacion con hamming code de ser necesario
 if hamming_code:    
-    decoded_data = np.array(hamming.decode_frame(bits_rx))
+    decoded_data = hamming.decode_frame(bits_rx, 4)
 else:
     decoded_data = bits_rx
 
-
-bits_con_error = contar_diferencias(data_bit, decoded_data)
+print(len(data_bit), len(decoded_data))
+pos_errores, bits_con_error = contar_diferencias(data_bit, np.array(decoded_data))
 
 print("Bits originales:", data_bit)
 print("Bits detectados:", np.array(decoded_data))
 print("Número de errores:", bits_con_error)
+print("Posiciones de los errores:", pos_errores)
 
 
 

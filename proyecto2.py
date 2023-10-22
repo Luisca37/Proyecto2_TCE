@@ -46,7 +46,7 @@ def isi(signal, L, isi_factor):
 
 np.random.seed(324)
 
-Ns = 64
+Ns = 12
 
 Ts = 1
 L = 16
