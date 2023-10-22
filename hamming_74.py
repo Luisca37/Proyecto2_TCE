@@ -46,7 +46,6 @@ def decode(encoded_data):
     # Corregir un solo error si hay errores detectados
     if error_count > 0:
         encoded_data[error_position - 1] ^= 1
-    print("Error count:", error_count)
 
     # Eliminar los bits de paridad y devolver el número de errores y los datos corregidos
     decoded_data = [encoded_data[2], encoded_data[4], encoded_data[5], encoded_data[6]]
@@ -78,12 +77,10 @@ def decode_frame(encoded_data):
         if len(simbolo_c) == 7:
             
             cont_error, simbolo_decodificado = decode(simbolo_c)
-            print("Simbolo codificado:", simbolo_c)
             decoded_data += simbolo_decodificado
             num_error += cont_error
-            print("Simbolo decodificado:", simbolo_decodificado)
             simbolo_c = []  # Restablecer el símbolo codificado 
 
     
-    return decoded_data, num_error   
+    return decoded_data
 
