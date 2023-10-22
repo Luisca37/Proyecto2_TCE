@@ -76,7 +76,7 @@ print(data_bit)
 
 #Codifica con o sin Hamming
 if hamming_code:
-    encoded_data = np.array(hamming.encode_frame(data_bit, 4))
+    encoded_data = np.array(hamming.encode_frame(data_bit))
 else        :
     encoded_data = data_bit
 Ns_code = len(encoded_data)
@@ -197,12 +197,12 @@ print('Bits detectados con detector de umbral: ', bits_rx, '\n')
 
 #se realiza la decodificacion con hamming code de ser necesario
 if hamming_code:    
-    decoded_data = hamming.decode_frame(bits_rx, 4)
+    decoded_data = np.array(hamming.decode_frame(bits_rx))
 else:
     decoded_data = bits_rx
 
-print(len(data_bit), len(decoded_data))
-pos_errores, bits_con_error = contar_diferencias(data_bit, np.array(decoded_data))
+
+pos_errores, bits_con_error = contar_diferencias(data_bit, decoded_data)
 
 print("Bits originales:", data_bit)
 print("Bits detectados:", np.array(decoded_data))
