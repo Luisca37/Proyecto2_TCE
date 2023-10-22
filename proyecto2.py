@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
-from reedsolo import RSCodec
+#from reedsolo import RSCodec
 import numpy as np
 
 #-----------Funciones-------------------#
@@ -81,6 +81,7 @@ plt.ylabel('Amplitud')
 plt.title('Codificación NRZ Polar')
 plt.legend()
 plt.grid()
+
 
 
 impulse_modulated = np.zeros(Ns * L)
@@ -182,6 +183,29 @@ print("Bits detectados:", bits_rx)
 print("Número de errores:", bits_con_error)
 
 
+
+
+
+
+#---------------Potencia de señales----------------#
+
+
+print("\n--------------Potencia de señales-------------\n")
+print("Potencia pulsos originales: ",np.mean(np.square(data_bit)),"Vrms")
+print("Potencia señal NRZ: ",np.mean(np.square(amp_modulated)),"Vrms")
+print("Potencia pulsos transmitidos: ",np.mean(np.square(impulse_modulated)),"Vrms")
+# Señal modulada continua
+t_continuo = np.linspace(0, Ns * Ts, Ns * L, endpoint=False)  # Tiempo continuo
+
+# Calcular la potencia de la señal continua
+potencia_tx_continua = np.trapz(tx_signal**2, t_continuo) / (Ns * Ts)
+print("Potencia de la señal continua transmitida:", potencia_tx_continua,"Vrms")
+
+potencia_rx_continua = np.trapz(rx_signal**2, t_continuo) / (Ns * Ts)
+print("Potencia de la señal con ISI y ruido:", potencia_rx_continua,"Vrms")
+
+potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns * Ts)
+print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
 
 plt.show()
 sys.exit(0)
