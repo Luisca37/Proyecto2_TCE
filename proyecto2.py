@@ -3,9 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
-#from reedsolo import RSCodec
 import numpy as np
-
+import hamming_74 as hamming
 #-----------Funciones-------------------#
 
 

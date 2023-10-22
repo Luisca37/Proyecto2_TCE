@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
-import CRC
+import hamming_74 as hamming
 import numpy as np
-
+import random
 #-----------Funciones-------------------#
 
 
@@ -47,7 +47,7 @@ def isi(signal, L, isi_factor):
 
 np.random.seed(324)
 
-Ns = 16 #divisible por 4
+Ns = 12 #divisible por 4
 
 Ts = 1
 L = 16
@@ -65,21 +65,25 @@ data_bit = (np.random.rand(Ns) > 0.5).astype(int)
 print(data_bit)
 
 
-# 2. Codificacion con Hamming Code
-simbolo = 0
-cont_simbolo = 0
-encoded_data = []
-for i in data_bit:
-    if cont_simbolo == 4:
-        simbolo = data_bit[i-4:i]
-        cont_simbolo = 0
-        simbolo_codificado = CRC.encode_with_hamming(simbolo)
-        encoded_data.append(simbolo_codificado)
+#Codificacion con Hamming Code
+encoded_data = hamming.encode_frame(data_bit)
+
+
 
 print("Datos codificados con Hamming Code:", encoded_data)
 
-# 3. Unipolar a Bipolar (modulacion de amplitud)
+#Unipolar a Bipolar (modulacion de amplitud)
 amp_modulated = 2 * data_bit - 1  # 0=> -1,  1=>1
 #amp_modulated = data_bit
-# 4. Modulacion de pulsos
-print(amp_modulated)
+#Modulacion de pulsos
+
+encoded_data[2] = encoded_data[2]^1
+encoded_data[3] = encoded_data[3]^1
+
+encoded_data[10] = encoded_data[10]^1
+print('Datos codificados con error:', encoded_data)
+#Decodificacion Hamming Code
+decoded_data, num_error = hamming.decode_frame(encoded_data)
+
+
+print("Datos decodificados con Hamming Code:", decoded_data)
