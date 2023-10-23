@@ -137,9 +137,17 @@ randn_array=factor_ruido*np.random.randn(1,length_tx_signal)
 
 
 #se agrega isi y ruido a la señal
-isi_factor = 1 # Valor mayor para un ISI más pronunciado
+#isi_factor = 1 # Valor mayor para un ISI más pronunciado
 
-rx_signal = isi(tx_signal, L, isi_factor)+randn_array[0]
+isi_factor = 1  # Factor de ISI
+isi_length = int(L * isi_factor)
+isi_filter = np.ones(isi_length) / isi_length
+
+# Aplicar convolución para introducir ISI a tx_signal
+rx_signal = ss.convolve(tx_signal, isi_filter, mode='same')+randn_array[0]
+
+
+#rx_signal = isi(tx_signal, L, isi_factor)+randn_array[0]
 
 
 
@@ -151,7 +159,6 @@ plt.xlabel('Tiempo (s)')
 plt.ylabel('Amplitud')
 plt.title('Señal con ISI y ruido')
 plt.grid(True)
-
 
 
 
@@ -172,17 +179,60 @@ plt.title('Señal Filtrada')
 plt.grid(True)
 
 
+
+#---------------ECUALIZADOR----------------------------------------------#
+
+
+mu = 0.225 # Tasa de aprendizaje del filtro LMS
+n_taps = 16  # Número de coeficientes del filtro LMS
+eq = np.zeros(n_taps)
+input_signal = np.copy(filtro_acoplado)
+equalized_signal = []
+
+for i in range(len(filtro_acoplado)):
+    if i >= n_taps:
+        # Tomar una porción de la señal de entrada para calcular el error
+        input_segment = input_signal[i:i-n_taps:-1]
+        error = tx_signal[i] - np.dot(eq, input_segment)
+        eq += mu * error * input_segment
+        equalized_signal.append(np.dot(eq, input_segment))
+
+# Convertir la lista a un array NumPy
+equalized_signal = np.array(equalized_signal)
+
+time_shift = 10  # Número de muestras para adelantar (valor positivo) o retrasar (valor negativo)
+
+# Crear una nueva señal ecualizada desplazada en el tiempo
+equalized_signal_shifted = np.roll(equalized_signal, time_shift)
+
+t_rx = np.arange(0, len(equalized_signal)) * t_step
+plt.figure(9)
+plt.plot(t_rx, equalized_signal)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Amplitud')
+plt.title('Señal Ecualizada')
+plt.grid(True)
+
+t_rx = np.arange(0, len(equalized_signal_shifted)) * t_step
+plt.figure(10)
+plt.plot(t_rx, equalized_signal_shifted)
+plt.xlabel('Tiempo (s)')
+plt.ylabel('Amplitud')
+plt.title('Señal Ecualizada con retardo')
+plt.grid(True)
+
+
 #---------------Decodificacion------------------#
 
 
-bits_rx, bits_con_error = detector_umbral(filtro_acoplado, 0, L)
+bits_rx, bits_con_error = detector_umbral(equalized_signal_shifted, 0, L)
 
 print("Bits originales:", data_bit)
 print("Bits detectados:", bits_rx)
 print("Número de errores:", bits_con_error)
 
 
-
+#------------------------DIAGRAMA DE OJO-----------------------------#
 
 def plot_eye_diagram(signal, samples_per_bit):
     signal_len = len(signal)
@@ -197,7 +247,7 @@ def plot_eye_diagram(signal, samples_per_bit):
         eye_diagram[i] = signal[start:end]
 
     # Graficar el diagrama de ojo
-    plt.figure()
+    plt.figure(11)
     plt.title('Diagrama de Ojo')
     plt.xlabel('Muestras')
     plt.ylabel('Amplitud')
@@ -210,6 +260,8 @@ def plot_eye_diagram(signal, samples_per_bit):
     plt.show()
 
 plot_eye_diagram(filtro_acoplado, L)
+
+
 
 
 
