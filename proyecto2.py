@@ -184,6 +184,33 @@ print("Número de errores:", bits_con_error)
 
 
 
+def plot_eye_diagram(signal, samples_per_bit):
+    signal_len = len(signal)
+    num_bits = signal_len // samples_per_bit
+    eye_width = samples_per_bit
+
+    eye_diagram = np.zeros((num_bits, eye_width))
+
+    for i in range(num_bits):
+        start = i * samples_per_bit
+        end = start + eye_width
+        eye_diagram[i] = signal[start:end]
+
+    # Graficar el diagrama de ojo
+    plt.figure()
+    plt.title('Diagrama de Ojo')
+    plt.xlabel('Muestras')
+    plt.ylabel('Amplitud')
+    plt.grid(True)
+
+    for i in range(eye_diagram.shape[0]):
+        plt.plot(eye_diagram[i], label=f'Bit {i}')
+
+    #plt.legend(False)
+    plt.show()
+
+plot_eye_diagram(filtro_acoplado, L)
+
 
 
 #---------------Potencia de señales----------------#
