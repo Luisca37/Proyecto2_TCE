@@ -5,7 +5,8 @@ import scipy.signal as ss
 from rcosdesign import rcosdesign
 import hamming_74 as hamming
 import numpy as np
-import random
+import time
+from IPython import display  # Importa display de IPython
 #-----------Funciones-------------------#
 
 def detector_umbral(señal, umbral, L):
@@ -54,192 +55,230 @@ def isi(signal, L, isi_factor):
     return isi_signal
 
 
-np.random.seed(324)
 
-Ns = 256 #divisible por 4
-hamming_code = True
-Ts = 1
-L = 16
-t_step = Ts / L
-factor_ruido = 0.5
+def modem(Ns, L, Ts, rolloff,hamming_code, iter):
+    """
+    np.random.seed(324)
+    Ns = 256 #divisible por 4
+    hamming_code = True
+    Ts = 1
+    L = 16
+    rolloff = 0.75
 
+    """
 
-rolloff = 0.75
-# 1. Generacion de onda del pulso
-pt = rcosdesign(rolloff, 6, L, 'sqrt')
-pt = pt / (np.max(np.abs(pt)))  # rescaling to match rcosine
+    #se generan las figuras 
 
+    # Activa el modo interactivo de Matplotlib
+    plt.ion()
 
-data_bit = (np.random.rand(Ns) > 0.5).astype(int)
-print(data_bit)
+    # Crea las figuras una vez para que se mantengan abiertas
+    plt.figure(1)
+    plt.figure(2)
+    plt.figure(3)
+    plt.figure(4)
+    plt.figure(6)
+    plt.figure(7)
 
+    # Inicializa los gráficos con valores vacíos
+    plt.figure(1).clear()
+    plt.figure(2).clear()
+    plt.figure(3).clear()
+    plt.figure(4).clear()
+    plt.figure(6).clear()
+    plt.figure(7).clear()
 
-#Codifica con o sin Hamming
-if hamming_code:
-    encoded_data = np.array(hamming.encode_frame(data_bit))
-else        :
-    encoded_data = data_bit
-Ns_code = len(encoded_data)
+    
 
-
-#Unipolar a Bipolar (modulacion de amplitud)
-amp_modulated = 2*encoded_data - 1  # 0=> -1,  1=>1
-
-# 4. Modulacion de pulsos
-print(amp_modulated)
-
-
-plt.figure(1)
-plt.plot(encoded_data, drawstyle='steps-post', label='Señal original')
-plt.plot(amp_modulated, drawstyle='steps-post', label='NRZ Polar')
-plt.xlabel('Tiempo')
-plt.ylabel('Amplitud')
-plt.title('Codificación NRZ Polar')
-plt.legend()
-plt.grid()
+    t_step = Ts / L
+    factor_ruido = 0.5
+   
+    # 1. Generacion de onda del pulso
+    pt = rcosdesign(rolloff, 6, L, 'sqrt')
+    pt = pt / (np.max(np.abs(pt)))  # rescaling to match rcosine
 
 
-
-impulse_modulated = np.zeros(Ns_code * L)
-for n in range(Ns_code):
-    delta_signal = np.concatenate(([amp_modulated[n]], np.zeros(L - 1)))
-    impulse_modulated[n * L: (n * L) + L] = delta_signal
-    #impulse_modulated[n * L: (n + 1) * L] = delta_signal
+    data_bit = (np.random.rand(Ns) > 0.5).astype(int)
 
 
+    #Codifica con o sin Hamming
+    if hamming_code:
+        encoded_data = np.array(hamming.encode_frame(data_bit))
+    else        :
+        encoded_data = data_bit
+    Ns_code = len(encoded_data)
 
+    #se acumula el tiempo de simulacion segun el numero de iteraciones
+    tiempo_actual = Ts*Ns_code*iter
 
-tx_signal = ss.convolve(impulse_modulated, pt, mode='same')
+    #Unipolar a Bipolar (modulacion de amplitud)
+    amp_modulated = 2*encoded_data - 1  # 0=> -1,  1=>1
 
-# Grafica los pulsos
-t_tx = np.arange(0, len(impulse_modulated)) * t_step
-plt.figure(2)
-plt.plot(t_tx, impulse_modulated)
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.title('Pulsos')
-plt.grid(True)
-
-
-# Grafica la señal transmitida
-t_tx = np.arange(0, len(tx_signal)) * t_step
-plt.figure(3)
-plt.plot(t_tx, tx_signal)
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.title('Señal Transmitida')
-plt.grid(True)
-
-
-plt.figure(4)
-plt.subplot(2,1,1)
-plt.stem(np.arange(t_step,Ns_code*Ts+t_step,t_step),impulse_modulated,markerfmt='.')
-plt.axis([0,Ns_code*Ts,-2*np.max(impulse_modulated),2*np.max(impulse_modulated)])
-plt.grid(True)
-plt.title('Pulsomodulado')
-
-plt.subplot(2,1,2)
-plt.plot(np.arange(t_step,t_step*len(tx_signal)+t_step,t_step),tx_signal)
-plt.axis([0,Ns_code*Ts,-2*np.max(tx_signal),2*np.max(tx_signal)])
-plt.grid(True)
-plt.title('Formadepulso')
-plt.tight_layout()
-
-#---------------Canal------------------#    
-
-
-#Generar numeros aleatorios con distribucion normal para simuar el ruido
-length_tx_signal=len(tx_signal)
-randn_array=factor_ruido*np.random.randn(1,length_tx_signal)
-
-
-#se agrega isi y ruido a la señal
-isi_factor = 1 # Valor mayor para un ISI más pronunciado
-
-rx_signal = isi(tx_signal, L, isi_factor)+randn_array[0]
+    # 4. Modulacion de pulsos
 
 
 
-# Graficar la señal con ISI y ruido
-t_rx = np.arange(0, len(rx_signal)) * t_step
-plt.figure(7)
-plt.plot(t_rx, rx_signal)
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.title('Señal con ISI y ruido')
-plt.grid(True)
+    plt.figure(1)
+    plt.plot(encoded_data, drawstyle='steps-post', label='Señal original')
+    plt.plot(amp_modulated, drawstyle='steps-post', label='NRZ Polar')
+    plt.xlabel('Tiempo')
+    plt.ylabel('Amplitud')
+    plt.title('Codificación NRZ Polar')
+    plt.legend()
+    plt.grid()
 
 
 
 
-#----------------------------Receptor---------------#
-#Filtro acoplado tiene la misma forma que pt debido a su simetria
-filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
-
-filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
-
-
-#Grafica la señal Recibida
-t_rx = np.arange(0, len(filtro_acoplado)) * t_step
-plt.figure(6)
-plt.plot(t_rx, filtro_acoplado)
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.title('Señal Filtrada')
-plt.grid(True)
-
-
-#---------------Decodificacion------------------#
-
-
-bits_rx = detector_umbral(filtro_acoplado, 0, L)
-print('Bits detectados con detector de umbral: ', bits_rx, '\n')
-
-#se realiza la decodificacion con hamming code de ser necesario
-if hamming_code:    
-    decoded_data = np.array(hamming.decode_frame(bits_rx))
-else:
-    decoded_data = bits_rx
-
-
-pos_errores, bits_con_error = contar_diferencias(data_bit, decoded_data)
-
-print("Bits originales:", data_bit)
-print("Bits detectados:", np.array(decoded_data))
-print("Número de errores:", bits_con_error)
-print("Posiciones de los errores:", pos_errores)
+    impulse_modulated = np.zeros(Ns_code * L)
+    for n in range(Ns_code):
+        delta_signal = np.concatenate(([amp_modulated[n]], np.zeros(L - 1)))
+        impulse_modulated[n * L: (n * L) + L] = delta_signal
+        #impulse_modulated[n * L: (n + 1) * L] = delta_signal
 
 
 
 
+    tx_signal = ss.convolve(impulse_modulated, pt, mode='same')
+
+    # Grafica los pulsos
+    t_tx = np.arange(0, len(impulse_modulated)) * t_step
+    plt.figure(2)
+    plt.plot(t_tx, impulse_modulated)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Pulsos')
+    plt.grid(True)
 
 
-#---------------Potencia de señales----------------#
+    # Grafica la señal transmitida
+    t_tx = np.arange(0, len(tx_signal)) * t_step
+    plt.figure(3)
+    plt.plot(t_tx, tx_signal)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal Transmitida')
+    plt.grid(True)
 
 
-print("\n--------------Potencia de señales-------------\n")
-print("Potencia pulsos originales: ",np.mean(np.square(encoded_data)),"Vrms")
-print("Potencia señal NRZ: ",np.mean(np.square(amp_modulated)),"Vrms")
-print("Potencia pulsos transmitidos: ",np.mean(np.square(impulse_modulated)),"Vrms")
-# Señal modulada continua
-t_continuo = np.linspace(0, Ns_code * Ts, Ns_code * L, endpoint=False)  # Tiempo continuo
+    plt.figure(4)
+    plt.subplot(2,1,1)
+    plt.stem(np.arange(t_step,Ns_code*Ts+t_step,t_step),impulse_modulated,markerfmt='.')
+    plt.axis([0,Ns_code*Ts,-2*np.max(impulse_modulated),2*np.max(impulse_modulated)])
+    plt.grid(True)
+    plt.title('Pulsomodulado')
 
-# Calcular la potencia de la señal continua
-potencia_tx_continua = np.trapz(tx_signal**2, t_continuo) / (Ns_code * Ts)
-print("Potencia de la señal continua transmitida:", potencia_tx_continua,"Vrms")
+    plt.subplot(2,1,2)
+    plt.plot(np.arange(t_step,t_step*len(tx_signal)+t_step,t_step),tx_signal)
+    plt.axis([0,Ns_code*Ts,-2*np.max(tx_signal),2*np.max(tx_signal)])
+    plt.grid(True)
+    plt.title('Formadepulso')
+    plt.tight_layout()
 
-potencia_rx_continua = np.trapz(rx_signal**2, t_continuo) / (Ns_code * Ts)
-print("Potencia de la señal con ISI y ruido:", potencia_rx_continua,"Vrms")
+    #---------------Canal------------------#    
 
-potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts)
-print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
 
+    #Generar numeros aleatorios con distribucion normal para simuar el ruido
+    length_tx_signal=len(tx_signal)
+    randn_array=factor_ruido*np.random.randn(1,length_tx_signal)
+
+
+    #se agrega isi y ruido a la señal
+    isi_factor = 1 # Valor mayor para un ISI más pronunciado
+
+    rx_signal = isi(tx_signal, L, isi_factor)+randn_array[0]
+
+
+
+    # Graficar la señal con ISI y ruido
+    t_rx = np.arange(0, len(rx_signal)) * t_step
+    plt.figure(7)
+    plt.plot(t_rx, rx_signal)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal con ISI y ruido')
+    plt.grid(True)
+
+
+
+
+    #----------------------------Receptor---------------#
+    #Filtro acoplado tiene la misma forma que pt debido a su simetria
+    filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
+    filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
+    print(filtro_acoplado)
+    print(len(filtro_acoplado))
+
+    #Grafica la señal Recibida
+    print('iteracion: ',iter)
+    print('tiempo actual: ',tiempo_actual)
+    t_rx = np.arange(0, len(filtro_acoplado)) * t_step + tiempo_actual
+    plt.figure(6)
+    plt.plot(t_rx, filtro_acoplado)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal Filtrada')
+    plt.grid(True)
+
+
+    #---------------Decodificacion------------------#
+
+
+    bits_rx = detector_umbral(filtro_acoplado, 0, L)
+
+
+    #se realiza la decodificacion con hamming code de ser necesario
+    if hamming_code:    
+        decoded_data = np.array(hamming.decode_frame(bits_rx))
+    else:
+        decoded_data = bits_rx
+
+
+    pos_errores, bits_con_error = contar_diferencias(data_bit, decoded_data)
+
+    print("Bits originales:", data_bit)
+    print("Bits detectados:", np.array(decoded_data))
+    print("Número de errores:", bits_con_error)
+    print("Posiciones de los errores:", pos_errores)
+
+
+
+
+
+
+    #---------------Potencia de señales----------------#
+
+
+    print("\n--------------Potencia de señales-------------\n")
+    print("Potencia pulsos originales: ",np.mean(np.square(encoded_data)),"Vrms")
+    print("Potencia señal NRZ: ",np.mean(np.square(amp_modulated)),"Vrms")
+    print("Potencia pulsos transmitidos: ",np.mean(np.square(impulse_modulated)),"Vrms")
+    # Señal modulada continua
+    t_continuo = np.linspace(0, Ns_code * Ts, Ns_code * L, endpoint=False)  # Tiempo continuo
+
+    # Calcular la potencia de la señal continua
+    potencia_tx_continua = np.trapz(tx_signal**2, t_continuo) / (Ns_code * Ts)
+    print("Potencia de la señal continua transmitida:", potencia_tx_continua,"Vrms")
+
+    potencia_rx_continua = np.trapz(rx_signal**2, t_continuo) / (Ns_code * Ts)
+    print("Potencia de la señal con ISI y ruido:", potencia_rx_continua,"Vrms")
+
+    potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts)
+    print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
+
+
+
+
+#-----------Menu-------------------#
+tiempo_actual = 0
+Ns = 64
+Ts = 0.1
+hamming_code = False
+iter = 0
+for i in range(32):
+    modem(Ns, 16, Ts, 0.75, hamming_code, iter)
+    display.display(plt.gcf())  # Muestra la figura actual
+    plt.pause(0.5)  # Pausa durante 1 segundo para permitir la actualización
+
+    iter += 1
 plt.show()
-sys.exit(0)
-
-
-
-
-
-
-
