@@ -30,12 +30,12 @@ def start_execution():
 window = tk.Tk()
 
 # Crear los widgets para configurar los parámetros del programa
-Ns_label = tk.Label(window, text="Ns:")
+Ns_label = tk.Label(window, text="Numero de bits por bloque:")
 Ns_label.pack()
 Ns_entry = tk.Entry(window)
 Ns_entry.pack()
 
-Ts_label = tk.Label(window, text="Ts:")
+Ts_label = tk.Label(window, text="Tiempo de bit:")
 Ts_label.pack()
 Ts_entry = tk.Entry(window)
 Ts_entry.pack()
@@ -44,7 +44,7 @@ hamming_code_var = tk.BooleanVar()
 hamming_code_checkbutton = tk.Checkbutton(window, text="Usar código de Hamming", variable=hamming_code_var)
 hamming_code_checkbutton.pack()
 
-roll_off_label = tk.Label(window, text="Roll-off:")
+roll_off_label = tk.Label(window, text="Roll-off del coseno alzado:")
 roll_off_label.pack()
 roll_off_entry = tk.Entry(window)
 roll_off_entry.pack()
@@ -54,13 +54,13 @@ L_label.pack()
 L_entry = tk.Entry(window)
 L_entry.pack()
 
-bloques_label = tk.Label(window, text="Bloques:")
+bloques_label = tk.Label(window, text="Numero de bloques a transmitir:")
 bloques_label.pack()
 bloques_entry = tk.Entry(window)
 bloques_entry.pack()
 
 # Crear el botón "Ejecutar"
-run_button = tk.Button(window, text="Ejecutar", command=start_execution)
+run_button = tk.Button(window, text="Ejecutar simulacion", command=start_execution)
 run_button.pack()
 
 # Ejecutar el bucle principal de la ventana
