@@ -7,6 +7,10 @@ import hamming_74 as hamming
 import numpy as np
 import time
 from IPython import display  # Importa display de IPython
+import tkinter as tk
+from tkinter import ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 #-----------Funciones-------------------#
 
 def detector_umbral(señal, umbral, L):
@@ -56,9 +60,9 @@ def isi(signal, L, isi_factor):
 
 
 
-def modem(Ns, L, Ts, rolloff,hamming_code, iter):
+def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
     """
-    np.random.seed(324)
+    
     Ns = 256 #divisible por 4
     hamming_code = True
     Ts = 1
@@ -66,7 +70,6 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     rolloff = 0.75
 
     """
-
     #se generan las figuras 
 
     # Activa el modo interactivo de Matplotlib
@@ -77,16 +80,16 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     plt.figure(2)
     plt.figure(3)
     plt.figure(4)
-    plt.figure(6)
-    plt.figure(7)
+    plt.figure(5)
+
 
     # Inicializa los gráficos con valores vacíos
     plt.figure(1).clear()
     plt.figure(2).clear()
     plt.figure(3).clear()
     plt.figure(4).clear()
-    plt.figure(6).clear()
-    plt.figure(7).clear()
+    plt.figure(5).clear()
+
 
     
 
@@ -118,14 +121,18 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
 
 
 
+    t_p = np.arange(0, len(encoded_data)) + tiempo_actual
+    
+    # Graficar la señal
     plt.figure(1)
-    plt.plot(encoded_data, drawstyle='steps-post', label='Señal original')
-    plt.plot(amp_modulated, drawstyle='steps-post', label='NRZ Polar')
+    plt.plot(t_p, encoded_data, drawstyle='steps-post', label='Señal original')
+    plt.plot(t_p, amp_modulated, drawstyle='steps-post', label='NRZ Polar')
     plt.xlabel('Tiempo')
     plt.ylabel('Amplitud')
     plt.title('Codificación NRZ Polar')
     plt.legend()
     plt.grid()
+    
 
 
 
@@ -142,7 +149,7 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     tx_signal = ss.convolve(impulse_modulated, pt, mode='same')
 
     # Grafica los pulsos
-    t_tx = np.arange(0, len(impulse_modulated)) * t_step
+    t_tx = np.arange(0, len(impulse_modulated)) * t_step + tiempo_actual
     plt.figure(2)
     plt.plot(t_tx, impulse_modulated)
     plt.xlabel('Tiempo (s)')
@@ -152,7 +159,7 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
 
 
     # Grafica la señal transmitida
-    t_tx = np.arange(0, len(tx_signal)) * t_step
+    t_tx = np.arange(0, len(tx_signal)) * t_step + tiempo_actual
     plt.figure(3)
     plt.plot(t_tx, tx_signal)
     plt.xlabel('Tiempo (s)')
@@ -160,20 +167,6 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     plt.title('Señal Transmitida')
     plt.grid(True)
 
-
-    plt.figure(4)
-    plt.subplot(2,1,1)
-    plt.stem(np.arange(t_step,Ns_code*Ts+t_step,t_step),impulse_modulated,markerfmt='.')
-    plt.axis([0,Ns_code*Ts,-2*np.max(impulse_modulated),2*np.max(impulse_modulated)])
-    plt.grid(True)
-    plt.title('Pulsomodulado')
-
-    plt.subplot(2,1,2)
-    plt.plot(np.arange(t_step,t_step*len(tx_signal)+t_step,t_step),tx_signal)
-    plt.axis([0,Ns_code*Ts,-2*np.max(tx_signal),2*np.max(tx_signal)])
-    plt.grid(True)
-    plt.title('Formadepulso')
-    plt.tight_layout()
 
     #---------------Canal------------------#    
 
@@ -191,8 +184,8 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
 
 
     # Graficar la señal con ISI y ruido
-    t_rx = np.arange(0, len(rx_signal)) * t_step
-    plt.figure(7)
+    t_rx = np.arange(0, len(rx_signal)) * t_step + tiempo_actual
+    plt.figure(4)
     plt.plot(t_rx, rx_signal)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
@@ -209,16 +202,7 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     print(filtro_acoplado)
     print(len(filtro_acoplado))
 
-    #Grafica la señal Recibida
-    print('iteracion: ',iter)
-    print('tiempo actual: ',tiempo_actual)
-    t_rx = np.arange(0, len(filtro_acoplado)) * t_step + tiempo_actual
-    plt.figure(6)
-    plt.plot(t_rx, filtro_acoplado)
-    plt.xlabel('Tiempo (s)')
-    plt.ylabel('Amplitud')
-    plt.title('Señal Filtrada')
-    plt.grid(True)
+    #el plot de esta señal se imprime despues de calcualr el total de errores
 
 
     #---------------Decodificacion------------------#
@@ -240,9 +224,22 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     print("Bits detectados:", np.array(decoded_data))
     print("Número de errores:", bits_con_error)
     print("Posiciones de los errores:", pos_errores)
+    total_errores += bits_con_error
+    
 
 
-
+    #Grafica la señal que fue decodificada
+    print('iteracion: ',iter)
+    print('tiempo actual: ',tiempo_actual)
+    t_rx = np.arange(0, len(filtro_acoplado)) * t_step + tiempo_actual
+    plt.figure(5)
+    plt.plot(t_rx, filtro_acoplado)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal Filtrada')
+    plt.grid(True)
+    plt.text(0.1, 0.9, f'Total Errores: {total_errores}', transform=plt.figure(5).transFigure, fontsize=12)
+    plt.text(0.7, 0.005, f'Bits transmitidos: {iter*Ns}', transform=plt.figure(5).transFigure, fontsize=12)
 
 
 
@@ -266,19 +263,31 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter):
     potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts)
     print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
 
+    return total_errores
 
-
-
+"""
 #-----------Menu-------------------#
+np.random.seed(324)
+
 tiempo_actual = 0
 Ns = 64
-Ts = 0.1
+Ts = 0.01
 hamming_code = False
 iter = 0
-for i in range(32):
-    modem(Ns, 16, Ts, 0.75, hamming_code, iter)
+roll_off = 0.75
+L=16
+total_errores = 0
+errores_bloque = 0
+bloques = 16
+for i in range(bloques):
+    #se ejecuta la modulacion demodulacion para un bloque de Ns bits y se acumulan los errores
+    total_errores = modem(Ns, L, Ts, roll_off, hamming_code, iter, total_errores) 
     display.display(plt.gcf())  # Muestra la figura actual
     plt.pause(0.5)  # Pausa durante 1 segundo para permitir la actualización
-
+    print('total errores: ',total_errores)
     iter += 1
+
+
 plt.show()
+input("Presiona Enter para finalizar")
+"""
