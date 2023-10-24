@@ -1,15 +1,14 @@
-import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
-import hamming_74 as hamming
 import numpy as np
-import time
 from IPython import display  # Importa display de IPython
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from RS import encode, decode
 
 #-----------Funciones-------------------#
 
@@ -60,7 +59,7 @@ def isi(signal, L, isi_factor):
 
 
 
-def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
+def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     """
     
     Ns = 256 #divisible por 4
@@ -81,7 +80,7 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
     plt.figure(3)
     plt.figure(4)
     plt.figure(5)
-
+    plt.figure(10)
 
     # Inicializa los gráficos con valores vacíos
     plt.figure(1).clear()
@@ -89,7 +88,7 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
     plt.figure(3).clear()
     plt.figure(4).clear()
     plt.figure(5).clear()
-
+    plt.figure(10).clear()
 
     
 
@@ -105,11 +104,12 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
 
 
     #Codifica con o sin Hamming
-    if hamming_code:
-        encoded_data = np.array(hamming.encode_frame(data_bit))
+    if codificacion:
+        encoded_data = np.array(encode(data_bit))
     else        :
         encoded_data = data_bit
     Ns_code = len(encoded_data)
+    print('bits codificados: ',np.array(encoded_data))
 
     #se acumula el tiempo de simulacion segun el numero de iteraciones
     tiempo_actual = Ts*Ns_code*iter
@@ -168,7 +168,9 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
     plt.grid(True)
 
 
-    #---------------Canal------------------#    
+    #----------------------------------------------------------#
+    #-----------------------Canal------------------------------#
+    #----------------------------------------------------------#
 
 
     #Generar numeros aleatorios con distribucion normal para simuar el ruido
@@ -177,9 +179,11 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
 
 
     #se agrega isi y ruido a la señal
-    isi_factor = 1 # Valor mayor para un ISI más pronunciado
+    isi_factor = 1.8 # Valor mayor para un ISI más pronunciado
+    isi_length = int(L * isi_factor)
+    isi_filter = np.ones(isi_length) / isi_length
 
-    rx_signal = isi(tx_signal, L, isi_factor)+randn_array[0]
+    rx_signal = ss.convolve(tx_signal, isi_filter, mode='same')+randn_array[0]
 
 
 
@@ -192,28 +196,75 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
     plt.title('Señal con ISI y ruido')
     plt.grid(True)
 
+    #----------------------------------------------------------#
+    #----------------------Receptor----------------------------#
+    #----------------------------------------------------------#
 
 
-
-    #----------------------------Receptor---------------#
+    #--------------------Filtro Acoplado---------------#
     #Filtro acoplado tiene la misma forma que pt debido a su simetria
     filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
     filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
     print(filtro_acoplado)
     print(len(filtro_acoplado))
 
+    
+
+
+    #---------------Ecualizador----------------------------#
+    mu = 0.225 # Tasa de aprendizaje del filtro LMS
+    n_taps = 16  # Número de coeficientes del filtro LMS
+    eq = np.zeros(n_taps)
+    input_signal = np.copy(filtro_acoplado)
+    equalized_signal = []
+
+    for i in range(len(filtro_acoplado)):
+        if i >= n_taps:
+            # Tomar una porción de la señal de entrada para calcular el error
+            input_segment = input_signal[i:i-n_taps:-1]
+            error = tx_signal[i] - np.dot(eq, input_segment)
+            eq += mu * error * input_segment
+            equalized_signal.append(np.dot(eq, input_segment))
+
+    # Convertir la lista a un array NumPy
+    equalized_signal = np.array(equalized_signal)
+    time_shift = 10  # Número de muestras para adelantar (valor positivo) o retrasar (valor negativo)
+
+    # Crear una nueva señal ecualizada desplazada en el tiempo
+    equalized_signal_shifted = np.roll(equalized_signal, time_shift)
     #el plot de esta señal se imprime despues de calcualr el total de errores
 
+    for i in range(len(equalized_signal), len(filtro_acoplado)):
+        equalized_signal_shifted = np.append(equalized_signal_shifted, 0)
+    print(len(equalized_signal_shifted) , equalized_signal_shifted)
+    
+
+    t_rx = np.arange(0, len(equalized_signal_shifted)) * t_step + tiempo_actual
+    plt.figure(10)
+    plt.plot(t_rx, equalized_signal_shifted)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal Ecualizada')
+    plt.grid(True)    
 
     #---------------Decodificacion------------------#
 
+    if ecualizador:
+        signal_to_decode = equalized_signal_shifted
+    else:
+        signal_to_decode = filtro_acoplado
 
-    bits_rx = detector_umbral(filtro_acoplado, 0, L)
 
+    bits_rx = detector_umbral(signal_to_decode, 0, L)
 
+    print(len(bits_rx))
+    print('bits detectados:')
+    print(np.array(bits_rx))
+
+    print(contar_diferencias(bits_rx, encoded_data))
     #se realiza la decodificacion con hamming code de ser necesario
-    if hamming_code:    
-        decoded_data = np.array(hamming.decode_frame(bits_rx))
+    if codificacion:    
+        decoded_data = np.array(decode(bits_rx, Ns))
     else:
         decoded_data = bits_rx
 
@@ -231,15 +282,15 @@ def modem(Ns, L, Ts, rolloff,hamming_code, iter,total_errores):
     #Grafica la señal que fue decodificada
     print('iteracion: ',iter)
     print('tiempo actual: ',tiempo_actual)
-    t_rx = np.arange(0, len(filtro_acoplado)) * t_step + tiempo_actual
+    t_rx = np.arange(0, len(signal_to_decode)) * t_step + tiempo_actual
     plt.figure(5)
-    plt.plot(t_rx, filtro_acoplado)
+    plt.plot(t_rx, signal_to_decode)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
     plt.title('Señal Filtrada')
     plt.grid(True)
     plt.text(0.1, 0.9, f'Total Errores: {total_errores}', transform=plt.figure(5).transFigure, fontsize=12)
-    plt.text(0.7, 0.005, f'Bits transmitidos: {iter*Ns}', transform=plt.figure(5).transFigure, fontsize=12)
+    plt.text(0.7, 0.005, f'Bits transmitidos: {Ns+iter*Ns}', transform=plt.figure(5).transFigure, fontsize=12)
 
 
 
@@ -271,23 +322,25 @@ np.random.seed(324)
 
 tiempo_actual = 0
 Ns = 64
-Ts = 0.01
-hamming_code = False
-iter = 0
+Ts = 1
+codificacion = True
+bloques = 16
 roll_off = 0.75
+ecualizador = True
+
 L=16
 total_errores = 0
 errores_bloque = 0
-bloques = 16
+
+iter = 0
+
 for i in range(bloques):
     #se ejecuta la modulacion demodulacion para un bloque de Ns bits y se acumulan los errores
-    total_errores = modem(Ns, L, Ts, roll_off, hamming_code, iter, total_errores) 
+    total_errores = modem(Ns, L, Ts, roll_off, codificacion, iter, total_errores, ecualizador) 
     display.display(plt.gcf())  # Muestra la figura actual
     plt.pause(0.5)  # Pausa durante 1 segundo para permitir la actualización
     print('total errores: ',total_errores)
     iter += 1
-
-
 plt.show()
 input("Presiona Enter para finalizar")
 """
