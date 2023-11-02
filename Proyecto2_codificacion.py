@@ -4,9 +4,6 @@ import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
 import numpy as np
-from IPython import display  # Importa display de IPython
-import tkinter as tk
-from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from RS import encode, decode
 
@@ -103,13 +100,13 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     data_bit = (np.random.rand(Ns) > 0.5).astype(int)
 
 
-    #Codifica con o sin Hamming
+    #Codifica con o sin RS
     if codificacion:
         encoded_data = np.array(encode(data_bit))
     else        :
         encoded_data = data_bit
     Ns_code = len(encoded_data)
-    print('bits codificados: ',np.array(encoded_data))
+    print("Ns_code: ",Ns_code)
 
     #se acumula el tiempo de simulacion segun el numero de iteraciones
     tiempo_actual = Ts*Ns_code*iter
@@ -118,8 +115,6 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     amp_modulated = 2*encoded_data - 1  # 0=> -1,  1=>1
 
     # 4. Modulacion de pulsos
-
-
 
     t_p = np.arange(0, len(encoded_data)) + tiempo_actual
     
@@ -205,8 +200,7 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     #Filtro acoplado tiene la misma forma que pt debido a su simetria
     filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
     filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
-    print(filtro_acoplado)
-    print(len(filtro_acoplado))
+
 
     
 
@@ -236,7 +230,6 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
 
     for i in range(len(equalized_signal), len(filtro_acoplado)):
         equalized_signal_shifted = np.append(equalized_signal_shifted, 0)
-    print(len(equalized_signal_shifted) , equalized_signal_shifted)
     
 
     t_rx = np.arange(0, len(equalized_signal_shifted)) * t_step + tiempo_actual
@@ -254,25 +247,29 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     else:
         signal_to_decode = filtro_acoplado
 
-
+    #deteccion de los bits
     bits_rx = detector_umbral(signal_to_decode, 0, L)
 
-    print(len(bits_rx))
-    print('bits detectados:')
-    print(np.array(bits_rx))
+    #se realiza la decodificacion con RS de ser necesario
+    print("Bits transmitidos:", encoded_data)
+    print("Bits detectados:", np.array(bits_rx))
+    print("Número de errores en dato codificado:", contar_diferencias(encoded_data, bits_rx)[1])
+    print("Posiciones de los en dato codificado:", contar_diferencias(encoded_data, bits_rx)[0])
 
-    print(contar_diferencias(bits_rx, encoded_data))
-    #se realiza la decodificacion con hamming code de ser necesario
+    errores_RS = []
+    simbolo_error = False
     if codificacion:    
-        decoded_data = np.array(decode(bits_rx, Ns))
+        decoded_data, errores_RS, simbolo_error = np.array(decode(bits_rx, Ns))
     else:
         decoded_data = bits_rx
-
+    print(errores_RS)
 
     pos_errores, bits_con_error = contar_diferencias(data_bit, decoded_data)
 
+
+
     print("Bits originales:", data_bit)
-    print("Bits detectados:", np.array(decoded_data))
+    print("Bits decoficados:", np.array(decoded_data))
     print("Número de errores:", bits_con_error)
     print("Posiciones de los errores:", pos_errores)
     total_errores += bits_con_error
@@ -290,7 +287,9 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     plt.title('Señal Filtrada')
     plt.grid(True)
     plt.text(0.1, 0.9, f'Total Errores: {total_errores}', transform=plt.figure(5).transFigure, fontsize=12)
-    plt.text(0.7, 0.005, f'Bits transmitidos: {Ns+iter*Ns}', transform=plt.figure(5).transFigure, fontsize=12)
+    plt.text(0.6, 0.005, f'Bits transmitidos: {Ns+iter*Ns}', transform=plt.figure(5).transFigure, fontsize=12)
+    plt.ylim(-2, 2)
+
 
 
 
@@ -314,7 +313,7 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts)
     print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
 
-    return total_errores
+    return total_errores, errores_RS, simbolo_error
 
 """
 #-----------Menu-------------------#

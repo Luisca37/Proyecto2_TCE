@@ -10,9 +10,8 @@ def encode(data):
             byte = ""
     # se usa la librería para codificar los datos
     rs = RSCodec(12)
-    print(byte_list)
+
     encoded = rs.encode(bytearray(byte_list))
-    print(encoded)
     # se convierte la lista de enteros a una lista de bits
     bit_list = []
     for byte in encoded:
@@ -22,9 +21,11 @@ def encode(data):
     return bit_list
 
 def decode(data, size_data):
+    simbolo_error = False
     # se convierte la lista de bits a una lista de enteros para poder usar la librería
     byte_list = []
     byte = ""
+    pos_errores = []
     for i in range(len(data)):
         byte += str(data[i])
         if (i+1) % 8 == 0:
@@ -35,9 +36,11 @@ def decode(data, size_data):
     rs = RSCodec(12)
     try:
         decoded = rs.decode(bytearray(byte_list))[0]
+        pos_errores = list(rs.decode(bytearray(byte_list))[2])
     except ReedSolomonError:
         decoded = bytearray(byte_list[:size_data//8])
-    print(decoded)
+        simbolo_error = True
+
     # se convierte la lista de enteros a una lista de bits
 
     bit_list = []
@@ -46,7 +49,7 @@ def decode(data, size_data):
         for bit in bits:
             bit_list.append(int(bit))
 
-    return bit_list
+    return bit_list, pos_errores, simbolo_error
 
 
 
