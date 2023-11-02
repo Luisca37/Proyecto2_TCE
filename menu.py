@@ -27,9 +27,9 @@ def create_checkbutton(parent, text, var):
     checkbutton = tk.Checkbutton(parent, text=text, variable=var)
     checkbutton.pack()
 
-def create_slider(parent, label_text, default_value):
+def create_slider(parent, label_text, default_value, from_value , to_value):
     slider_value = tk.DoubleVar()
-    slider = tk.Scale(parent, from_=0.1, to=5, orient='horizontal', variable=slider_value)
+    slider = tk.Scale(parent, from_=from_value, to=to_value, orient='horizontal', variable=slider_value)
     entry = tk.Entry(parent, textvariable=slider_value)
     label = tk.Label(parent, text=label_text)
 
@@ -105,8 +105,8 @@ L_entry = create_label_entry(window, "L:", "16")
 bloques_entry = create_label_entry(window, "Numero de bloques a transmitir:", "8")
 
 # Crear sliders
-slider1, slider_value1 = create_slider(window, "ISI:", 0.5)
-slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 2.5)
+slider1, slider_value1 = create_slider(window, "ISI:", 0.5, 0.1, 5)
+slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 1, 0.1, 10)
 
 # Ajustar el tamaño de la ventana y definir la fuente
 window.geometry('800x600')
