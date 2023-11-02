@@ -5,6 +5,40 @@ import sys
 import os
 from Proyecto2_codificacion import modem
 
+
+import tkinter as tk
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
+import os
+from Proyecto2_codificacion import modem
+
+# ... (Tu clase TextRedirector y función start_execution se mantienen igual) ...
+
+def create_label_entry(parent, label_text, default_value):
+    label = tk.Label(parent, text=label_text)
+    label.pack()
+    entry = tk.Entry(parent)
+    entry.pack()
+    entry.insert(0, default_value)
+    return entry
+
+def create_checkbutton(parent, text, var):
+    checkbutton = tk.Checkbutton(parent, text=text, variable=var)
+    checkbutton.pack()
+
+def create_slider(parent, label_text, default_value):
+    slider_value = tk.DoubleVar()
+    slider = tk.Scale(parent, from_=0.1, to=5, orient='horizontal', variable=slider_value)
+    entry = tk.Entry(parent, textvariable=slider_value)
+    label = tk.Label(parent, text=label_text)
+
+    label.pack()
+    slider.pack()
+    entry.pack()
+    slider.set(default_value)  # Set default value for the slider
+    return slider, slider_value
+
 class TextRedirector(object):
     def __init__(self, widget):
         self.widget = widget
@@ -55,63 +89,36 @@ def start_execution():
     plt.show()
 
 # Crear la ventana principal
+# Crear la ventana principal
 window = tk.Tk()
+window.title("Simulación de Modem")  # Añade un título a la ventana
 
 # Crear los widgets para configurar los parámetros del programa
-Ns_label = tk.Label(window, text="Numero de bits por bloque(multiplo de 8):")
-Ns_label.pack()
-Ns_entry = tk.Entry(window)
-Ns_entry.pack()
-Ns_entry.insert(0, "64")
-
-Ts_label = tk.Label(window, text="Tiempo de bit:")
-Ts_label.pack()
-Ts_entry = tk.Entry(window)
-Ts_entry.pack()
-Ts_entry.insert(0, "1")
-
-
+Ns_entry = create_label_entry(window, "Numero de bits por bloque(multiplo de 8):", "64")
+Ts_entry = create_label_entry(window, "Tiempo de bit:", "1")
 code_var = tk.BooleanVar()
-code_checkbutton = tk.Checkbutton(window, text="Usar Reed Solomon", variable=code_var)
-code_checkbutton.pack()
-
+code_checkbutton = create_checkbutton(window, "Usar Reed Solomon", code_var)
 ecualizador_var = tk.BooleanVar()
-ecualizador_checkbutton = tk.Checkbutton(window, text="Usar Ecualizador", variable=ecualizador_var)
-ecualizador_checkbutton.pack()
+ecualizador_checkbutton = create_checkbutton(window, "Usar Ecualizador", ecualizador_var)
+roll_off_entry = create_label_entry(window, "Roll-off del coseno alzado:", "0.75")
+L_entry = create_label_entry(window, "L:", "16")
+bloques_entry = create_label_entry(window, "Numero de bloques a transmitir:", "8")
 
-roll_off_label = tk.Label(window, text="Roll-off del coseno alzado:")
-roll_off_label.pack()
-roll_off_entry = tk.Entry(window)
-roll_off_entry.pack()
-roll_off_entry.insert(0, "0.75")
+# Crear sliders
+slider1, slider_value1 = create_slider(window, "ISI:", 0.5)
+slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 2.5)
 
-L_label = tk.Label(window, text="L:")
-L_label.pack()
-L_entry = tk.Entry(window)
-L_entry.pack()
-L_entry.insert(0, "16")
-
-bloques_label = tk.Label(window, text="Numero de bloques a transmitir:")
-bloques_label.pack()
-bloques_entry = tk.Entry(window)
-bloques_entry.pack()
-bloques_entry.insert(0, "8")
-
-
-# Ajustar el tamaño de la ventana
-window.geometry('800x600')  # Cambia esto a las dimensiones que desees
-
-# Definir la fuente para los widgets
-font = ('Helvetica', 12)  # Cambia esto a la fuente y tamaño que desees
+# Ajustar el tamaño de la ventana y definir la fuente
+window.geometry('800x600')
+font = ('Arial', 12)
 
 # Crear el botón "Ejecutar"
 run_button = tk.Button(window, text="Ejecutar simulacion", command=start_execution)
 run_button.pack()
 
-
 # Crear un widget de texto para mostrar la salida de la terminal
-output_text = tk.Text(window, wrap='word', height=20)  # Ajusta la altura según tus necesidades
-output_text.pack(fill='both', expand=True)  # Hacer que el widget de texto se expanda para llenar la ventana
+output_text = tk.Text(window, wrap='word', height=20, font=font)  # Ajusta la fuente
+output_text.pack(fill='both', expand=True)
 
 # Redirigir la salida estándar al widget de texto
 sys.stdout = TextRedirector(output_text)
