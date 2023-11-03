@@ -6,15 +6,6 @@ import os
 from Proyecto2_codificacion import modem
 
 
-import tkinter as tk
-import matplotlib.pyplot as plt
-import numpy as np
-import sys
-import os
-from Proyecto2_codificacion import modem
-
-# ... (Tu clase TextRedirector y función start_execution se mantienen igual) ...
-
 def create_label_entry(parent, label_text, default_value):
     label = tk.Label(parent, text=label_text)
     label.pack()
@@ -109,7 +100,7 @@ slider1, slider_value1 = create_slider(window, "ISI:", 0.5, 0.1, 5)
 slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 1, 0.1, 10)
 
 # Ajustar el tamaño de la ventana y definir la fuente
-window.geometry('800x600')
+window.geometry('800x800')
 font = ('Arial', 12)
 
 # Crear el botón "Ejecutar"
