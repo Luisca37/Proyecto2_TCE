@@ -6,79 +6,12 @@ from rcosdesign import rcosdesign
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from RS import encode, decode
+import functions as fn
 
 #-----------Funciones-------------------#
 
-def detector_umbral(señal, umbral, L):
-    bits_rx = []
-    cont = L
-    umbral = 0
-    for i in señal:
-        if cont == L:
-            if i > umbral:
-                bits_rx.append(1)
-            else:
-                bits_rx.append(0)           
-            cont = 0
-        cont += 1
 
-    return bits_rx
-
-def contar_diferencias(array1, array2):
-    # Inicializar una lista para almacenar las posiciones de las diferencias
-    posiciones_errores = []
-    num_errores = 0  # Inicializar el contador de errores
-
-    # Asegurarnos de que ambos arrays tengan la misma longitud
-    if len(array1) == len(array2):
-        # Comparar los elementos de los arrays uno por uno
-        for i in range(len(array1)):
-            if array1[i] != array2[i]:
-                posiciones_errores.append(i)  # Agregar la posición al resultado
-                num_errores += 1  # Incrementar el contador de errores
-
-        return posiciones_errores, num_errores
-    else:
-        return "Los arrays no tienen la misma longitud"
-
-
-#funcion que agrega ISI a la señal
-def isi(signal, L, isi_factor):
-    # Crear un filtro con forma de pulso rectangular y duración de L*isi_factor
-    isi_filter = np.ones(int(L * isi_factor))
-    # Normalizar el filtro para mantener la amplitud
-    isi_filter /= np.sum(isi_filter)
-
-    # Aplicar convolución para introducir ISI
-    isi_signal = np.convolve(signal, isi_filter, 'full')[:len(signal)]
-
-    return isi_signal
-
-
-def codificar_pam4(data_bit):
-    array_codificado = []
-
-    for i in range(0, len(data_bit) - 1, 2):
-        if data_bit[i] == 0 and data_bit[i + 1] == 0:
-            array_codificado.append(-3)
-        elif data_bit[i] == 0 and data_bit[i + 1] == 1:
-            array_codificado.append(-1)
-        elif data_bit[i] == 1 and data_bit[i + 1] == 0:
-            array_codificado.append(1)
-        elif data_bit[i] == 1 and data_bit[i + 1] == 1:
-            array_codificado.append(3)
-
-    # Agregar el último valor si la longitud de data_bit es impar
-    if len(data_bit) % 2 == 1:
-        if data_bit[-1] == 0:
-            array_codificado.append(-3)
-        else:
-            array_codificado.append(3)
-
-    return array_codificado
-
-
-def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
+def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador):
     """
     
     Ns = 256 #divisible por 4
@@ -89,7 +22,7 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
 
     """
 
-    pam4 = True
+    pam4 = False
     #se generan las figuras 
 
     # Activa el modo interactivo de Matplotlib
@@ -114,7 +47,7 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
     
 
     t_step = Ts / L
-    factor_ruido = 0.5
+    
    
     # 1. Generacion de onda del pulso
     pt = rcosdesign(rolloff, 6, L, 'sqrt')
@@ -136,7 +69,7 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
 
     #Unipolar a Bipolar (modulacion de amplitud)
     if pam4:
-        amp_modulated = codificar_pam4(encoded_data)
+        amp_modulated = fn.codificar_pam4(encoded_data)
     else:   
         amp_modulated = 2*encoded_data - 1  # 0=> -1,  1=>1
 
@@ -208,12 +141,13 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
 
 
     #Generar numeros aleatorios con distribucion normal para simuar el ruido
+    factor_ruido = ruido
     length_tx_signal=len(tx_signal)
     randn_array=factor_ruido*np.random.randn(1,length_tx_signal)
 
 
     #se agrega isi y ruido a la señal
-    isi_factor = 1.8 # Valor mayor para un ISI más pronunciado
+    isi_factor = ISI # Valor mayor para un ISI más pronunciado
     isi_length = int(L * isi_factor)
     isi_filter = np.ones(isi_length) / isi_length
 
@@ -287,18 +221,28 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
         signal_to_decode = filtro_acoplado
 
 
+
+    t_rx = np.arange(0, len(signal_to_decode)) * t_step + tiempo_actual
+    plt.figure(5)
+    plt.plot(t_rx, signal_to_decode)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal Filtrada')
+    plt.grid(True)
         #Grafica la señal que fue decodificada
 
 
     #deteccion de los bits
 
-    bits_rx = detector_umbral(signal_to_decode, 0, L)
+
+
+    bits_rx = fn.detector_umbral(signal_to_decode, 0, L)
 
     #se realiza la decodificacion con RS de ser necesario
     print("Bits transmitidos:", encoded_data)
     print("Bits detectados:", np.array(bits_rx))
-    print("Número de errores en dato codificado:", contar_diferencias(encoded_data, bits_rx)[1])
-    print("Posiciones de los en dato codificado:", contar_diferencias(encoded_data, bits_rx)[0])
+    print("Número de errores en dato codificado:", fn.contar_diferencias(encoded_data, bits_rx)[1])
+    print("Posiciones de los en dato codificado:", fn.contar_diferencias(encoded_data, bits_rx)[0])
 
     errores_RS = []
     simbolo_error = False
@@ -308,7 +252,7 @@ def modem(Ns, L, Ts, rolloff,codificacion, iter,total_errores, ecualizador):
         decoded_data = bits_rx
     print(errores_RS)
 
-    pos_errores, bits_con_error = contar_diferencias(data_bit, decoded_data)
+    pos_errores, bits_con_error = fn.contar_diferencias(data_bit, decoded_data)
 
 
 

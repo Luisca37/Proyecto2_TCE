@@ -20,7 +20,7 @@ def create_checkbutton(parent, text, var):
 
 def create_slider(parent, label_text, default_value, from_value , to_value):
     slider_value = tk.DoubleVar()
-    slider = tk.Scale(parent, from_=from_value, to=to_value, orient='horizontal', variable=slider_value)
+    slider = tk.Scale(parent, from_=from_value, to=to_value, orient='horizontal', variable=slider_value, resolution=0.001)
     entry = tk.Entry(parent, textvariable=slider_value)
     label = tk.Label(parent, text=label_text)
 
@@ -48,6 +48,8 @@ def start_execution():
     # Obtener los valores de los widgets de la interfaz gráfica
     Ns = int(Ns_entry.get())
     Ts = float(Ts_entry.get())
+    isi = slider_value1.get()
+    ruido = slider_value2.get()
     code = code_var.get()
     ecualizador = ecualizador_var.get()
     roll_off = float(roll_off_entry.get())
@@ -60,7 +62,7 @@ def start_execution():
     errores_simbolo = {}
     for i in range(bloques):
         os.system('cls')
-        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, code, i, total_errores, ecualizador)
+        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador)
         plt.pause(0.5)
         print('total errores: ',total_errores)
         errores_RS[i] = error_RS
@@ -96,8 +98,8 @@ L_entry = create_label_entry(window, "L:", "16")
 bloques_entry = create_label_entry(window, "Numero de bloques a transmitir:", "8")
 
 # Crear sliders
-slider1, slider_value1 = create_slider(window, "ISI:", 0.5, 0.1, 5)
-slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 1, 0.1, 10)
+slider1, slider_value1 = create_slider(window, "ISI:", 1.8, 1, 5)
+slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 0.5, 0.01, 10)
 
 # Ajustar el tamaño de la ventana y definir la fuente
 window.geometry('800x800')
