@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.signal as ss
 from rcosdesign import rcosdesign
 import numpy as np
-import hamming_74 as hamming
+#import hamming_74 as hamming
 #-----------Funciones-------------------#
 
 

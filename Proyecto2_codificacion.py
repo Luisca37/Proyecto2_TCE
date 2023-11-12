@@ -11,7 +11,7 @@ import functions as fn
 #-----------Funciones-------------------#
 
 
-def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador):
+def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador,rz):
     """
     
     Ns = 256 #divisible por 4
@@ -23,6 +23,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     """
 
     pam4 = False
+    
     #se generan las figuras 
 
     # Activa el modo interactivo de Matplotlib
@@ -68,8 +69,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
 
     #Unipolar a Bipolar (modulacion de amplitud)
-    if pam4:
-        amp_modulated = fn.codificar_pam4(encoded_data)
+    if rz:
+        amp_modulated = fn.rz_polar_encoding(encoded_data)
     else:   
         amp_modulated = 2*encoded_data - 1  # 0=> -1,  1=>1
 
@@ -79,25 +80,25 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     #se calcula el tiempo actual de simulacion
     tiempo_actual = Ts*Ns_code*iter
 
-    
-
-
-    
-    
-
-    """
-    t_p = np.arange(0, len(encoded_data)) + tiempo_actual
+    if rz:
+        tipo="rz"
+        t_p = np.arange(0, len(encoded_data)) + tiempo_actual
+        t_p2=(np.arange(0,len(amp_modulated))/2)+tiempo_actual
+    else:
+        tipo="nrz"
+        t_p = np.arange(0, len(encoded_data)) + tiempo_actual
+        t_p2=t_p
 
     # Graficar la señal
     plt.figure(1)
     plt.plot(t_p, encoded_data, drawstyle='steps-post', label='Señal original')
-    plt.plot(t_p, amp_modulated, drawstyle='steps-post', label='NRZ Polar')
+    plt.plot(t_p2, amp_modulated, drawstyle='steps-post', label='NRZ Polar')
     plt.xlabel('Tiempo')
     plt.ylabel('Amplitud')
     plt.title('Codificación NRZ Polar')
     plt.legend()
     plt.grid()
-    """
+    
 
 
 
@@ -234,9 +235,15 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     #deteccion de los bits
 
+    match tipo:
+        case "nrz":
+            bits_rx = fn.detector_umbralNRZ(signal_to_decode, 0, L)
+        
+        case "rz":
+            bits_rx = fn.detector_umbralRZ(signal_to_decode, 0, L)
 
-
-    bits_rx = fn.detector_umbral(signal_to_decode, 0, L)
+        case default:
+            return 0
 
     #se realiza la decodificacion con RS de ser necesario
     print("Bits transmitidos:", encoded_data)

@@ -5,7 +5,7 @@ from rcosdesign import rcosdesign
 import numpy as np
 
 
-def detector_umbral(señal, umbral, L):
+def detector_umbralNRZ(señal, umbral, L):
     bits_rx = []
     cont = L
     umbral = 0
@@ -17,7 +17,23 @@ def detector_umbral(señal, umbral, L):
                 bits_rx.append(0)           
             cont = 0
         cont += 1
+    print("bits_rx:",bits_rx)
+    return bits_rx
 
+def detector_umbralRZ(señal, umbral, L):
+    bits_rx = []
+    cont = L
+    for i in señal:
+        if cont == 2*L:
+            if i > umbral:
+                bits_rx.append(1)
+            elif i==0:
+                continue
+            elif i<umbral:
+                bits_rx.append(0)           
+            cont = 0
+        cont += 1
+    print ("bits_rx:",bits_rx)
     return bits_rx
 
 def contar_diferencias(array1, array2):
@@ -72,3 +88,13 @@ def codificar_pam4(data_bit):
             array_codificado.append(3)
 
     return array_codificado
+
+#codificacion RZ polar
+def rz_polar_encoding(data):
+    encoded_signal = []
+    for bit in data:
+        if bit == 1:
+            encoded_signal.extend([1, 0])  # 1 se representa con +1, seguido de 0
+        else:
+            encoded_signal.extend([-1, 0])  # 0 se representa con -1, seguido de 0
+    return encoded_signal

@@ -52,6 +52,7 @@ def start_execution():
     ruido = slider_value2.get()
     code = code_var.get()
     ecualizador = ecualizador_var.get()
+    rz=rz_var.get()
     roll_off = float(roll_off_entry.get())
     L = int(L_entry.get())
     bloques = int(bloques_entry.get())
@@ -62,7 +63,7 @@ def start_execution():
     errores_simbolo = {}
     for i in range(bloques):
         os.system('cls')
-        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador)
+        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador,rz)
         plt.pause(0.5)
         print('total errores: ',total_errores)
         errores_RS[i] = error_RS
@@ -93,6 +94,8 @@ code_var = tk.BooleanVar()
 code_checkbutton = create_checkbutton(window, "Usar Reed Solomon", code_var)
 ecualizador_var = tk.BooleanVar()
 ecualizador_checkbutton = create_checkbutton(window, "Usar Ecualizador", ecualizador_var)
+rz_var=tk.BooleanVar()
+rz_checkbutton=create_checkbutton(window, "RZ Polar", rz_var)
 roll_off_entry = create_label_entry(window, "Roll-off del coseno alzado:", "0.75")
 L_entry = create_label_entry(window, "L:", "16")
 bloques_entry = create_label_entry(window, "Numero de bloques a transmitir:", "8")
