@@ -8,24 +8,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from RS import encode, decode
 import funciones as fn
 
-#-----------Funciones-------------------#
-
-
-#------------------------DIAGRAMA DE OJO-----------------------------#
 
 
 
 
-def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador,rz):
-    """
-    
-    Ns = 256 #divisible por 4
-    hamming_code = True
-    Ts = 1
-    L = 16
-    rolloff = 0.75
+def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador,modulation):
 
-    """
 
     pam4 = False
     
@@ -40,7 +28,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     plt.figure(3)
     plt.figure(4)
     plt.figure(5)
-    plt.figure(10)
+    plt.figure(6)
+    plt.figure(7)
 
     # Inicializa los gráficos con valores vacíos
     plt.figure(1).clear()
@@ -48,7 +37,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     plt.figure(3).clear()
     plt.figure(4).clear()
     plt.figure(5).clear()
-    plt.figure(10).clear()
+    plt.figure(6).clear()
+    plt.figure(7).clear()
 
     
 
@@ -56,6 +46,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     
    
     # 1. Generacion de onda del pulso
+    print("Rolloff:", rolloff)
     pt = rcosdesign(rolloff, 6, L, 'sqrt')
     pt = pt / (np.max(np.abs(pt)))  # rescaling to match rcosine
 
@@ -73,30 +64,29 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     
 
 
-    #Unipolar a Bipolar (modulacion de amplitud)
-    if rz:
-        amp_modulated = fn.rz_polar_encoding(encoded_data)
-    else:   
-        amp_modulated = 2*encoded_data - 1  # 0=> -1,  1=>1
+    match modulation:
+        case "nrz_p":
+            amp_modulated = 2*encoded_data - 1 # 0=> -1,  1=>1
+            Ns_code = len(amp_modulated)
+        case "rz_p":
+            amp_modulated = fn.rz_polar_encoding(encoded_data)
+            Ns_code = int(len(amp_modulated)/2)
+        case "nrz_u":
+            amp_modulated = encoded_data
+            Ns_code = len(amp_modulated)
 
 
-    #vuelve a calcular el numero de simbolos
-    if rz:
-        Ns_code = int(len(amp_modulated)/2)
-    else:
-        Ns_code = len(amp_modulated)
+
+
+
     #se calcula el tiempo actual de simulacion
     tiempo_actual = Ts*Ns_code*iter
-    print(rz)
-    print(Ns_code)
 
 
-    if rz:
-        tipo="rz"
+    if modulation == "rz_p":
         t_p = np.arange(0, len(encoded_data)) + tiempo_actual
         t_p2=(np.arange(0,len(amp_modulated))/2)+tiempo_actual
     else:
-        tipo="nrz"
         t_p = np.arange(0, len(encoded_data)) + tiempo_actual
         t_p2=t_p
 
@@ -116,8 +106,9 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     # 4. Modulacion de pulsos
     impulse_modulated = np.zeros(Ns_code * L)
 
-    print(len(amp_modulated))
-    if rz:
+
+
+    if modulation == "rz_p":
          i = 0
          for n in range(Ns_code):
  
@@ -132,6 +123,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
             #impulse_modulated[n * L: (n + 1) * L] = delta_signal
 
 
+                   
 
 
     tx_signal = ss.convolve(impulse_modulated, pt, mode='same')
@@ -195,7 +187,11 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     #--------------------Filtro Acoplado---------------#
     #Filtro acoplado tiene la misma forma que pt debido a su simetria
     filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
-    filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
+
+    if modulation == "nrz_u":
+        filtro_acoplado /= np.sum(np.abs(pt))*0.8
+    else:
+        filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
 
 
     
@@ -255,7 +251,20 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         #Grafica la señal que fue decodificada
 
     #deteccion de los bits
-    bits_rx = fn.detector_umbral(signal_to_decode, 0, L)
+    match modulation:
+        case "nrz_p":
+            bits_rx, valores, t_muestreo = fn.detector_umbral(signal_to_decode, 0, L)
+        case "rz_p":
+            bits_rx, valores, t_muestre = fn.detector_umbral(signal_to_decode, 0, L)
+        case "nrz_u":
+            bits_rx, valores, t_muestreo = fn.detector_umbral(signal_to_decode, 0.48, L)
+
+    print(t_muestreo)
+    #-----------------grafico del muestreo------------------#
+    plt.figure(6)
+    plt.stem(t_muestreo, valores, use_line_collection=True)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
 
 
     #grafica el diagrama de ojo------------------------------------------
@@ -272,7 +281,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     # Graficar el diagrama de ojo
     
-    plt.figure(10)
+    plt.figure(7)
     plt.title('Diagrama de Ojo')
     plt.xlabel('Muestras')
     plt.ylabel('Amplitud')
@@ -280,9 +289,9 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     for i in range(eye_diagram.shape[0]):
         plt.plot(eye_diagram[i], label=f'Bit {i}')
-
-    plt.show
     #--------------------------------------------------------------
+
+
 
 
     #se realiza la decodificacion con RS de ser necesario

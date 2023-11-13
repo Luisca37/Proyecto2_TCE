@@ -6,16 +6,21 @@ import numpy as np
 
 def detector_umbral(señal, umbral, L):
     bits_rx = []
+    tiempos = []
+    valores = []
     cont = L
     umbral = 0
-    for i in señal:
+    for i, valor in enumerate(señal):
         if cont == L:
-            if i > umbral:
+            if valor > umbral:
                 bits_rx.append(1)
             else:
-                bits_rx.append(0)           
+                bits_rx.append(0)
+            tiempos.append(i)
             cont = 0
+            valores.append(valor)
         cont += 1
+    return bits_rx, valores, tiempos
 
     return bits_rx
 def detector_umbralNRZ(señal, umbral, L):
@@ -111,3 +116,28 @@ def rz_polar_encoding(data):
         else:
             encoded_signal.extend([-1, 0])  # 0 se representa con -1, seguido de 0
     return encoded_signal
+
+def plot_eye_diagram(signal, samples_per_bit, tiempo_actual):
+    signal_len = len(signal)
+    num_bits = signal_len // samples_per_bit
+    eye_width = samples_per_bit
+
+    eye_diagram = np.zeros((num_bits, eye_width))
+
+    for i in range(num_bits):
+        start = i * samples_per_bit
+        end = start + eye_width
+        eye_diagram[i] = signal[start:end]
+
+    # Graficar el diagrama de ojo
+    
+    plt.figure(11)
+    plt.title('Diagrama de Ojo')
+    plt.xlabel('Muestras')
+    plt.ylabel('Amplitud')
+    plt.grid(True)
+
+    for i in range(eye_diagram.shape[0]):
+        plt.plot(eye_diagram[i], label=f'Bit {i}')
+
+    plt.show

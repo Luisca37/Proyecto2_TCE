@@ -61,9 +61,10 @@ def start_execution():
     total_errores = 0
     errores_RS = {}
     errores_simbolo = {}
+    print(modulation)
     for i in range(bloques):
         os.system('cls')
-        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador, False)
+        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador, modulation)
         plt.pause(0.5)
         print('total errores: ',total_errores)
         errores_RS[i] = error_RS
@@ -126,9 +127,9 @@ title_label = tk.Label(modulation_frame, text="Selecciona la modulación:", font
 title_label.grid(row=0, column=0, columnspan=3)  # Colocar el Label en la parte superior del Frame
 
 # Crear los Radiobuttons
-nrz_polar_radiobutton = tk.Radiobutton(modulation_frame, text="NRZ Polar", variable=modulation_var, value="NRZ Polar")
-nrz_unipolar_radiobutton = tk.Radiobutton(modulation_frame, text="NRZ Unipolar", variable=modulation_var, value="NRZ Unipolar")
-rz_polar_radiobutton = tk.Radiobutton(modulation_frame, text="RZ Polar", variable=modulation_var, value="RZ Polar")
+nrz_polar_radiobutton = tk.Radiobutton(modulation_frame, text="NRZ Polar", variable=modulation_var, value="nrz_p")
+nrz_unipolar_radiobutton = tk.Radiobutton(modulation_frame, text="NRZ Unipolar", variable=modulation_var, value="nrz_u")
+rz_polar_radiobutton = tk.Radiobutton(modulation_frame, text="RZ Polar", variable=modulation_var, value="rz_p")
 
 # Organizar los Radiobuttons en el Frame
 nrz_polar_radiobutton.grid(row=1, column=0)  # Cambiar row a 1
