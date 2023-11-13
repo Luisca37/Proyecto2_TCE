@@ -13,30 +13,7 @@ import funciones as fn
 
 #------------------------DIAGRAMA DE OJO-----------------------------#
 
-def plot_eye_diagram(signal, samples_per_bit, tiempo_actual):
-    signal_len = len(signal)
-    num_bits = signal_len // samples_per_bit
-    eye_width = samples_per_bit
 
-    eye_diagram = np.zeros((num_bits, eye_width))
-
-    for i in range(num_bits):
-        start = i * samples_per_bit
-        end = start + eye_width
-        eye_diagram[i] = signal[start:end]
-
-    # Graficar el diagrama de ojo
-    
-    plt.figure(11)
-    plt.title('Diagrama de Ojo')
-    plt.xlabel('Muestras')
-    plt.ylabel('Amplitud')
-    plt.grid(True)
-
-    for i in range(eye_diagram.shape[0]):
-        plt.plot(eye_diagram[i], label=f'Bit {i}')
-
-    plt.show
 
 
 def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador,rz):
@@ -279,7 +256,34 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     #deteccion de los bits
     bits_rx = fn.detector_umbral(signal_to_decode, 0, L)
-    plot_eye_diagram(signal_to_decode, L, tiempo_actual)
+
+
+    #grafica el diagrama de ojo------------------------------------------
+    signal_len = len(signal_to_decode)
+    num_bits = signal_len // L
+    eye_width = L
+
+    eye_diagram = np.zeros((num_bits, eye_width))
+
+    for i in range(num_bits):
+        start = i * L
+        end = start + eye_width
+        eye_diagram[i] = signal_to_decode[start:end]
+
+    # Graficar el diagrama de ojo
+    
+    plt.figure(10)
+    plt.title('Diagrama de Ojo')
+    plt.xlabel('Muestras')
+    plt.ylabel('Amplitud')
+    plt.grid(True)
+
+    for i in range(eye_diagram.shape[0]):
+        plt.plot(eye_diagram[i], label=f'Bit {i}')
+
+    plt.show
+    #--------------------------------------------------------------
+
 
     #se realiza la decodificacion con RS de ser necesario
     print("Bits transmitidos:", encoded_data)

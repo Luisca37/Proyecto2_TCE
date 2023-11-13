@@ -5,30 +5,29 @@ import sys
 import os
 from Proyecto2_codificacion import modem
 
+def create_label_entry(parent, text, default_value, label_width, entry_width):
+    # Crear el Label con texto en negrita, ancho fijo y alineado a la izquierda
+    label = tk.Label(parent, text=text, font=("Helvetica", 10, "bold"), width=label_width, anchor='w')
+    label.pack(side=tk.LEFT)
 
-def create_label_entry(parent, label_text, default_value):
-    label = tk.Label(parent, text=label_text)
-    label.pack()
-    entry = tk.Entry(parent)
-    entry.pack()
-    entry.insert(0, default_value)
-    return entry
+    # Crear la Entry con ancho fijo
+    entry_value = tk.StringVar(value=default_value)
+    entry = tk.Entry(parent, textvariable=entry_value, width=entry_width)
+    entry.pack(side=tk.LEFT)
 
-def create_checkbutton(parent, text, var):
-    checkbutton = tk.Checkbutton(parent, text=text, variable=var)
-    checkbutton.pack()
+    return entry, entry_value
 
-def create_slider(parent, label_text, default_value, from_value , to_value):
-    slider_value = tk.DoubleVar()
-    slider = tk.Scale(parent, from_=from_value, to=to_value, orient='horizontal', variable=slider_value, resolution=0.001)
-    entry = tk.Entry(parent, textvariable=slider_value)
-    label = tk.Label(parent, text=label_text)
+def create_checkbutton(parent, text, variable):
+    checkbutton = tk.Checkbutton(parent, text=text, variable=variable)
+    return checkbutton  # Devolver el Checkbutton sin organizarlo
 
-    label.pack()
-    slider.pack()
-    entry.pack()
-    slider.set(default_value)  # Set default value for the slider
-    return slider, slider_value
+def create_slider(parent, text, initial_value, from_, to):
+    # Crear el Label y el Slider
+    label = tk.Label(parent, text=text)
+    slider_value = tk.DoubleVar(value=initial_value)
+    slider = tk.Scale(parent, from_=from_, to=to, orient=tk.HORIZONTAL, variable=slider_value, resolution=0.01)
+
+    return slider, label, slider_value  # Devolver el Slider, el Label y el DoubleVar
 
 class TextRedirector(object):
     def __init__(self, widget):
@@ -42,6 +41,7 @@ class TextRedirector(object):
 # Función que se ejecutará en un hilo separado para ejecutar el código
 
 def start_execution():
+    global slider_value1, slider_value2
     output_text.delete('1.0', tk.END)
 
     np.random.seed(324)
@@ -52,10 +52,10 @@ def start_execution():
     ruido = slider_value2.get()
     code = code_var.get()
     ecualizador = ecualizador_var.get()
-    rz=rz_var.get()
     roll_off = float(roll_off_entry.get())
     L = int(L_entry.get())
     bloques = int(bloques_entry.get())
+    modulation = modulation_var.get()
 
     # Ejecutar el programa con los parámetros seleccionados
     total_errores = 0
@@ -63,7 +63,7 @@ def start_execution():
     errores_simbolo = {}
     for i in range(bloques):
         os.system('cls')
-        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador,rz)
+        total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador, False)
         plt.pause(0.5)
         print('total errores: ',total_errores)
         errores_RS[i] = error_RS
@@ -87,29 +87,96 @@ def start_execution():
 window = tk.Tk()
 window.title("Simulación de Modem")  # Añade un título a la ventana
 
-# Crear los widgets para configurar los parámetros del programa
-Ns_entry = create_label_entry(window, "Numero de bits por bloque(multiplo de 8):", "64")
-Ts_entry = create_label_entry(window, "Tiempo de bit:", "1")
+
 code_var = tk.BooleanVar()
-code_checkbutton = create_checkbutton(window, "Usar Reed Solomon", code_var)
 ecualizador_var = tk.BooleanVar()
-ecualizador_checkbutton = create_checkbutton(window, "Usar Ecualizador", ecualizador_var)
-rz_var=tk.BooleanVar()
-rz_checkbutton=create_checkbutton(window, "RZ Polar", rz_var)
-roll_off_entry = create_label_entry(window, "Roll-off del coseno alzado:", "0.75")
-L_entry = create_label_entry(window, "L:", "16")
-bloques_entry = create_label_entry(window, "Numero de bloques a transmitir:", "8")
+modulation_var = tk.StringVar()
+modulation_var.set("NRZ Polar")
 
-# Crear sliders
-slider1, slider_value1 = create_slider(window, "ISI:", 1.8, 0.1, 5)
-slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 0.5, 0.01, 2)
+# Crear un Frame y un widget de entrada para cada parámetro
+Ns_frame = tk.Frame(window)
+Ns_frame.pack(pady=5)
+Ns_entry, Ns_value = create_label_entry(Ns_frame, "Numero de bits por bloque(multiplo de 8):", "64", 33, 10)
 
+bloques_frame = tk.Frame(window)
+bloques_frame.pack(pady=5)
+bloques_entry, bloques_value = create_label_entry(bloques_frame, "Numero de bloques a transmitir:", "8", 33, 10)
+
+Ts_frame = tk.Frame(window)
+Ts_frame.pack(pady=5)
+Ts_entry, Ts_value = create_label_entry(Ts_frame, "Tiempo de bit:", "1", 33, 10)
+
+roll_off_frame = tk.Frame(window)
+roll_off_frame.pack(pady=5)
+roll_off_entry, roll_off_value = create_label_entry(roll_off_frame, "Roll-off del coseno alzado:", "0.75", 33, 10)
+
+L_frame = tk.Frame(window)
+L_frame.pack(pady=5)
+L_entry, L_value = create_label_entry(L_frame, "Numero de muestras por simbolo:", "16", 33, 10)
+
+
+
+#----botones de seleccion de modulacion-----------------
+# Crear un Frame para contener los Radiobuttons
+modulation_frame = tk.Frame(window)
+modulation_frame.pack(pady=5)
+
+# Crear un Label para el título
+title_label = tk.Label(modulation_frame, text="Selecciona la modulación:", font=("Helvetica", 10, "bold"))
+title_label.grid(row=0, column=0, columnspan=3)  # Colocar el Label en la parte superior del Frame
+
+# Crear los Radiobuttons
+nrz_polar_radiobutton = tk.Radiobutton(modulation_frame, text="NRZ Polar", variable=modulation_var, value="NRZ Polar")
+nrz_unipolar_radiobutton = tk.Radiobutton(modulation_frame, text="NRZ Unipolar", variable=modulation_var, value="NRZ Unipolar")
+rz_polar_radiobutton = tk.Radiobutton(modulation_frame, text="RZ Polar", variable=modulation_var, value="RZ Polar")
+
+# Organizar los Radiobuttons en el Frame
+nrz_polar_radiobutton.grid(row=1, column=0)  # Cambiar row a 1
+nrz_unipolar_radiobutton.grid(row=1, column=1)  # Cambiar row a 1
+rz_polar_radiobutton.grid(row=1, column=2)  # Cambiar row a 1
+
+#----------RS y Ecualizador----------------
+# Crear un Frame para contener los Checkbuttons
+options_frame = tk.Frame(window)
+options_frame.pack(pady=5)
+
+# Crear un Label para el título
+options_title_label = tk.Label(options_frame, text="Selecciona las opciones:", font=("Helvetica", 10, "bold"))
+options_title_label.grid(row=0, column=0, columnspan=2)  # Colocar el Label en la parte superior del Frame
+
+# Crear los Checkbuttons
+code_checkbutton = create_checkbutton(options_frame, "Usar Reed Solomon", code_var)
+ecualizador_checkbutton = create_checkbutton(options_frame, "Usar ecualizador adaptativo", ecualizador_var)
+
+# Organizar los Checkbuttons en el Frame
+code_checkbutton.grid(row=1, column=0)  # Cambiar row a 1
+ecualizador_checkbutton.grid(row=1, column=1)  # Cambiar row a 1
+
+
+#--------Crear sliders--------------------------
+# Crear un Frame para contener los Sliders
+sliders_frame = tk.Frame(window)
+sliders_frame.pack(pady=5)  # Agregar un relleno vertical de 10 píxeles
+
+# Crear un Label para el título
+sliders_title_label = tk.Label(sliders_frame, text="Propiedades del canal:", font=("Helvetica", 10, "bold"))
+sliders_title_label.grid(row=0, column=0, columnspan=2)  # Colocar el Label en la parte superior del Frame
+
+# Crear los Sliders
+slider1, label1, slider_value1 = create_slider(sliders_frame, "ISI:", 1.8, 0.1, 5)
+slider2, label2, slider_value2 = create_slider(sliders_frame, "Factor de Ruido:", 0.5, 0.01, 2)
+# Organizar los Labels y los Sliders en el Frame
+label1.grid(row=1, column=0)  # Cambiar row a 1
+slider1.grid(row=2, column=0)  # Cambiar row a 2
+label2.grid(row=1, column=1)  # Cambiar row a 1
+slider2.grid(row=2, column=1)  # Cambiar row a 2
+#---------------------------------------------
 # Ajustar el tamaño de la ventana y definir la fuente
 window.geometry('800x800')
 font = ('Arial', 12)
 
 # Crear el botón "Ejecutar"
-run_button = tk.Button(window, text="Ejecutar simulacion", command=start_execution)
+run_button = tk.Button(window, text="Ejecutar simulacion", command=start_execution, font=("Helvetica", 10, "bold"))
 run_button.pack()
 
 # Crear un widget de texto para mostrar la salida de la terminal
