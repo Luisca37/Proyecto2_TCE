@@ -6,7 +6,7 @@ from rcosdesign import rcosdesign
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from RS import encode, decode
-import functions as fn
+import funciones as fn
 
 #-----------Funciones-------------------#
 
@@ -76,9 +76,15 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
 
     #vuelve a calcular el numero de simbolos
-    Ns_code = len(amp_modulated)
+    if rz:
+        Ns_code = int(len(amp_modulated)/2)
+    else:
+        Ns_code = len(amp_modulated)
     #se calcula el tiempo actual de simulacion
     tiempo_actual = Ts*Ns_code*iter
+    print(rz)
+    print(Ns_code)
+
 
     if rz:
         tipo="rz"
@@ -104,10 +110,21 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     # 4. Modulacion de pulsos
     impulse_modulated = np.zeros(Ns_code * L)
-    for n in range(Ns_code):
-        delta_signal = np.concatenate(([amp_modulated[n]], np.zeros(L - 1)))
-        impulse_modulated[n * L: (n * L) + L] = delta_signal
-        #impulse_modulated[n * L: (n + 1) * L] = delta_signal
+
+    print(len(amp_modulated))
+    if rz:
+         i = 0
+         for n in range(Ns_code):
+ 
+            delta_signal = np.concatenate(([amp_modulated[i]], np.zeros(L - 1)))
+            impulse_modulated[n * L: (n * L) + L] = delta_signal
+            #impulse_modulated[n * L: (n + 1) * L] = delta_signal
+            i += 2      
+    else: 
+        for n in range(Ns_code):
+            delta_signal = np.concatenate(([amp_modulated[n]], np.zeros(L - 1)))
+            impulse_modulated[n * L: (n * L) + L] = delta_signal
+            #impulse_modulated[n * L: (n + 1) * L] = delta_signal
 
 
 
@@ -205,14 +222,14 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     for i in range(len(equalized_signal), len(filtro_acoplado)):
         equalized_signal_shifted = np.append(equalized_signal_shifted, 0)
     
-
+    '''
     t_rx = np.arange(0, len(equalized_signal_shifted)) * t_step + tiempo_actual
     plt.figure(10)
     plt.plot(t_rx, equalized_signal_shifted)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
     plt.title('Señal Ecualizada')
-    plt.grid(True)    
+    plt.grid(True)'''    
 
     #---------------Decodificacion------------------#
 
@@ -232,18 +249,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     plt.grid(True)
         #Grafica la señal que fue decodificada
 
-
     #deteccion de los bits
-
-    match tipo:
-        case "nrz":
-            bits_rx = fn.detector_umbralNRZ(signal_to_decode, 0, L)
-        
-        case "rz":
-            bits_rx = fn.detector_umbralRZ(signal_to_decode, 0, L)
-
-        case default:
-            return 0
+    bits_rx = fn.detector_umbral(signal_to_decode, 0, L)
 
     #se realiza la decodificacion con RS de ser necesario
     print("Bits transmitidos:", encoded_data)

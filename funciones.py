@@ -4,7 +4,20 @@ import scipy.signal as ss
 from rcosdesign import rcosdesign
 import numpy as np
 
+def detector_umbral(señal, umbral, L):
+    bits_rx = []
+    cont = L
+    umbral = 0
+    for i in señal:
+        if cont == L:
+            if i > umbral:
+                bits_rx.append(1)
+            else:
+                bits_rx.append(0)           
+            cont = 0
+        cont += 1
 
+    return bits_rx
 def detector_umbralNRZ(señal, umbral, L):
     bits_rx = []
     cont = L

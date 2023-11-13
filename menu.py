@@ -101,8 +101,8 @@ L_entry = create_label_entry(window, "L:", "16")
 bloques_entry = create_label_entry(window, "Numero de bloques a transmitir:", "8")
 
 # Crear sliders
-slider1, slider_value1 = create_slider(window, "ISI:", 1.8, 1, 5)
-slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 0.5, 0.01, 10)
+slider1, slider_value1 = create_slider(window, "ISI:", 1.8, 0.1, 5)
+slider2, slider_value2 = create_slider(window, "Factor de Ruido:", 0.5, 0.01, 2)
 
 # Ajustar el tamaño de la ventana y definir la fuente
 window.geometry('800x800')
