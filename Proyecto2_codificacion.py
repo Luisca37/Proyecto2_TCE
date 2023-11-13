@@ -91,10 +91,10 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     # Graficar la señal
     plt.figure(1)
     plt.plot(t_p, encoded_data, drawstyle='steps-post', label='Señal original')
-    plt.plot(t_p2, amp_modulated, drawstyle='steps-post', label='NRZ Polar')
+    plt.plot(t_p2, amp_modulated, drawstyle='steps-post', label='Señal modulada')
     plt.xlabel('Tiempo')
     plt.ylabel('Amplitud')
-    plt.title('Codificación NRZ Polar')
+    plt.title('Señal modulada')
     plt.legend()
     plt.grid()
     
@@ -143,6 +143,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
 
     # Grafica la señal transmitida
+
+    
     t_tx = np.arange(0, len(tx_signal)) * t_step + tiempo_actual
     plt.figure(3)
     plt.plot(t_tx, tx_signal)
@@ -150,7 +152,6 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     plt.ylabel('Amplitud')
     plt.title('Señal Transmitida')
     plt.grid(True)
-
 
     #----------------------------------------------------------#
     #-----------------------Canal------------------------------#
@@ -170,7 +171,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     rx_signal = ss.convolve(tx_signal, isi_filter, mode='same')+randn_array[0]
 
-
+    
 
     # Graficar la señal con ISI y ruido
     t_rx = np.arange(0, len(rx_signal)) * t_step + tiempo_actual
@@ -261,20 +262,25 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         case "nrz_p":
             bits_rx, valores, t_muestreo = fn.detector_umbral(signal_to_decode, 0, L)
         case "rz_p":
-            bits_rx, valores, t_muestre = fn.detector_umbral(signal_to_decode, 0, L)
+            bits_rx, valores, t_muestreo = fn.detector_umbral(signal_to_decode, 0, L)
         case "nrz_u":
             bits_rx, valores, t_muestreo = fn.detector_umbral(signal_to_decode, 0.48, L)
 
 
     #-----------------grafico del muestreo------------------#
+    # Genera una señal de tiempo que tenga la misma longitud que valores
+    t_muestreo = np.arange(len(valores)) + tiempo_actual
+
     plt.figure(6)
     plt.stem(t_muestreo, valores, use_line_collection=True)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
+    plt.title('Muestreo de señal recibida')
+    plt.grid(True)
 
 
     #grafica el diagrama de ojo------------------------------------------
-    signal_len = len(signal_to_decode)
+    signal_len = len(filtro_acoplado)
     num_bits = signal_len // L
     eye_width = L
 
@@ -283,7 +289,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     for i in range(num_bits):
         start = i * L
         end = start + eye_width
-        eye_diagram[i] = signal_to_decode[start:end]
+        eye_diagram[i] = filtro_acoplado[start:end]
 
     # Graficar el diagrama de ojo
     
@@ -312,7 +318,6 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         decoded_data, errores_RS, simbolo_error = np.array(decode(bits_rx, Ns))
     else:
         decoded_data = bits_rx
-    print(errores_RS)
 
     pos_errores, bits_con_error = fn.contar_diferencias(data_bit, decoded_data)
 

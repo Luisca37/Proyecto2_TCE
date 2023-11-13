@@ -21,6 +21,18 @@ def create_checkbutton(parent, text, variable):
     checkbutton = tk.Checkbutton(parent, text=text, variable=variable)
     return checkbutton  # Devolver el Checkbutton sin organizarlo
 
+
+def create_slider_entry(parent, text, initial_value, from_, to):
+    # Crear el Label y el Slider
+    label = tk.Label(parent, text=text)
+    slider_value = tk.DoubleVar(value=initial_value)
+    slider = tk.Scale(parent, from_=from_, to=to, orient=tk.HORIZONTAL, variable=slider_value, resolution=0.01)
+
+    # Crear la Entry vinculada al mismo DoubleVar que el Slider
+    entry = tk.Entry(parent, textvariable=slider_value, width=10)
+
+    return slider, label, slider_value, entry  # Devolver el Slider, el Label, el DoubleVar y la Entry
+
 def create_slider(parent, text, initial_value, from_, to):
     # Crear el Label y el Slider
     label = tk.Label(parent, text=text)
@@ -92,7 +104,7 @@ window.title("Simulación de Modem")  # Añade un título a la ventana
 code_var = tk.BooleanVar()
 ecualizador_var = tk.BooleanVar()
 modulation_var = tk.StringVar()
-modulation_var.set("NRZ Polar")
+modulation_var.set("nrz_p")
 
 # Crear un Frame y un widget de entrada para cada parámetro
 Ns_frame = tk.Frame(window)
@@ -163,14 +175,17 @@ sliders_frame.pack(pady=5)  # Agregar un relleno vertical de 10 píxeles
 sliders_title_label = tk.Label(sliders_frame, text="Propiedades del canal:", font=("Helvetica", 10, "bold"))
 sliders_title_label.grid(row=0, column=0, columnspan=2)  # Colocar el Label en la parte superior del Frame
 
-# Crear los Sliders
-slider1, label1, slider_value1 = create_slider(sliders_frame, "ISI:", 1.8, 0.1, 5)
-slider2, label2, slider_value2 = create_slider(sliders_frame, "Factor de Ruido:", 0.5, 0.01, 2)
-# Organizar los Labels y los Sliders en el Frame
+# Crear los Sliders y las Entries
+slider1, label1, slider_value1, entry1 = create_slider_entry(sliders_frame, "ISI:", 1.8, 0.1, 5)
+slider2, label2, slider_value2, entry2 = create_slider_entry(sliders_frame, "Factor de Ruido:", 0.5, 0.01, 2)
+
+# Organizar los Labels, los Sliders y las Entries en el Frame
 label1.grid(row=1, column=0)  # Cambiar row a 1
 slider1.grid(row=2, column=0)  # Cambiar row a 2
+entry1.grid(row=3, column=0)  # Añadir la Entry debajo del Slider
 label2.grid(row=1, column=1)  # Cambiar row a 1
 slider2.grid(row=2, column=1)  # Cambiar row a 2
+entry2.grid(row=3, column=1)  # Añadir la Entry debajo del Slider
 #---------------------------------------------
 # Ajustar el tamaño de la ventana y definir la fuente
 window.geometry('800x800')
