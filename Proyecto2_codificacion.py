@@ -10,8 +10,6 @@ import funciones as fn
 
 
 
-
-
 def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador,modulation):
 
 
@@ -125,8 +123,12 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
                    
 
-
-    tx_signal = ss.convolve(impulse_modulated, pt, mode='same')
+    # Convolucionar la señal con el pulso
+    tx_signal_full = ss.convolve(impulse_modulated, pt, mode='full')
+    diff_len = len(tx_signal_full) - len(impulse_modulated)
+    start = diff_len // 2
+    end = start + len(impulse_modulated)
+    tx_signal = tx_signal_full[start:end]
 
     # Grafica los pulsos
     t_tx = np.arange(0, len(impulse_modulated)) * t_step + tiempo_actual
@@ -186,7 +188,11 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     #--------------------Filtro Acoplado---------------#
     #Filtro acoplado tiene la misma forma que pt debido a su simetria
-    filtro_acoplado = ss.convolve(rx_signal , pt, mode = 'same' )
+    filtro_acoplado_full = ss.convolve(rx_signal, pt, mode='full')
+    diff_len = len(filtro_acoplado_full) - len(rx_signal)
+    start = diff_len // 2
+    end = start + len(rx_signal)
+    filtro_acoplado = filtro_acoplado_full[start:end]
 
     if modulation == "nrz_u":
         filtro_acoplado /= np.sum(np.abs(pt))*0.8
@@ -259,7 +265,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         case "nrz_u":
             bits_rx, valores, t_muestreo = fn.detector_umbral(signal_to_decode, 0.48, L)
 
-    print(t_muestreo)
+
     #-----------------grafico del muestreo------------------#
     plt.figure(6)
     plt.stem(t_muestreo, valores, use_line_collection=True)
