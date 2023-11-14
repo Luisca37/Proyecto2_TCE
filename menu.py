@@ -73,8 +73,11 @@ def start_execution():
     total_errores = 0
     errores_RS = {}
     errores_simbolo = {}
-    print(modulation)
+
+    print('Iniciando simulacion...')
     for i in range(bloques):
+        print('#------------------------------------------------#\n')
+        print('Bloque: ',i)
         os.system('cls')
         total_errores, error_RS, error_simbolo = modem(Ns, L, Ts, roll_off, isi, ruido, code, i, total_errores, ecualizador, modulation)
         plt.pause(0.5)
@@ -82,6 +85,7 @@ def start_execution():
         errores_RS[i] = error_RS
         errores_simbolo[i] = error_simbolo
     
+    print('Simulacion terminada')
     #conteo errores detectados y corregidos por RS
     total_errores_RS = 0
     for lista in errores_RS.values():

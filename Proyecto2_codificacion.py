@@ -13,7 +13,6 @@ import funciones as fn
 def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecualizador,modulation):
 
 
-    pam4 = False
     
     #se generan las figuras 
 
@@ -23,28 +22,17 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     # Crea las figuras una vez para que se mantengan abiertas
     plt.figure(1)
     plt.figure(2)
-    plt.figure(3)
-    plt.figure(4)
-    plt.figure(5)
-    plt.figure(6)
-    plt.figure(7)
+
 
     # Inicializa los gráficos con valores vacíos
     plt.figure(1).clear()
     plt.figure(2).clear()
-    plt.figure(3).clear()
-    plt.figure(4).clear()
-    plt.figure(5).clear()
-    plt.figure(6).clear()
-    plt.figure(7).clear()
-
-    
+ 
 
     t_step = Ts / L
     
    
     # 1. Generacion de onda del pulso
-    print("Rolloff:", rolloff)
     pt = rcosdesign(rolloff, 6, L, 'sqrt')
     pt = pt / (np.max(np.abs(pt)))  # rescaling to match rcosine
 
@@ -89,7 +77,10 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         t_p2=t_p
 
     # Graficar la señal
-    plt.figure(1)
+    fig = plt.figure(1)
+    fig.set_size_inches(12, 7)
+    fig.subplots_adjust(hspace=0.3, wspace=0.3)  # Ajusta el espacio entre los subplots
+    plt.subplot(2, 2, 1)
     plt.plot(t_p, encoded_data, drawstyle='steps-post', label='Señal original')
     plt.plot(t_p2, amp_modulated, drawstyle='steps-post', label='Señal modulada')
     plt.xlabel('Tiempo')
@@ -132,7 +123,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     # Grafica los pulsos
     t_tx = np.arange(0, len(impulse_modulated)) * t_step + tiempo_actual
-    plt.figure(2)
+    #plt.figure(2)
+    plt.subplot(2, 2, 2)
     plt.plot(t_tx, impulse_modulated)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
@@ -146,7 +138,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     
     t_tx = np.arange(0, len(tx_signal)) * t_step + tiempo_actual
-    plt.figure(3)
+    #plt.figure(3)
+    plt.subplot(2, 2, 3)
     plt.plot(t_tx, tx_signal)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
@@ -175,7 +168,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     # Graficar la señal con ISI y ruido
     t_rx = np.arange(0, len(rx_signal)) * t_step + tiempo_actual
-    plt.figure(4)
+    #plt.figure(4)
+    plt.subplot(2, 2, 4)
     plt.plot(t_rx, rx_signal)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
@@ -229,15 +223,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     for i in range(len(equalized_signal), len(filtro_acoplado)):
         equalized_signal_shifted = np.append(equalized_signal_shifted, 0)
-    
-    '''
-    t_rx = np.arange(0, len(equalized_signal_shifted)) * t_step + tiempo_actual
-    plt.figure(10)
-    plt.plot(t_rx, equalized_signal_shifted)
-    plt.xlabel('Tiempo (s)')
-    plt.ylabel('Amplitud')
-    plt.title('Señal Ecualizada')
-    plt.grid(True)'''    
+      
 
     #---------------Decodificacion------------------#
 
@@ -247,15 +233,6 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         signal_to_decode = filtro_acoplado
 
 
-
-    t_rx = np.arange(0, len(signal_to_decode)) * t_step + tiempo_actual
-    plt.figure(5)
-    plt.plot(t_rx, signal_to_decode)
-    plt.xlabel('Tiempo (s)')
-    plt.ylabel('Amplitud')
-    plt.title('Señal Filtrada')
-    plt.grid(True)
-        #Grafica la señal que fue decodificada
 
     #deteccion de los bits
     match modulation:
@@ -271,11 +248,15 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     # Genera una señal de tiempo que tenga la misma longitud que valores
     t_muestreo = np.arange(len(valores)) + tiempo_actual
 
-    plt.figure(6)
+    fig2 = plt.figure(2)
+    fig2.set_size_inches(12, 7)
+    fig2.subplots_adjust(hspace=0.3, wspace=0.3)  # Ajusta el espacio entre los subplots
+    plt.subplot(2, 2, 1)
     plt.stem(t_muestreo, valores, use_line_collection=True)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
     plt.title('Muestreo de señal recibida')
+    plt.ylim(-2, 2)
     plt.grid(True)
 
 
@@ -293,7 +274,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     # Graficar el diagrama de ojo
     
-    plt.figure(7)
+    plt.subplot(2, 2, 2)
     plt.title('Diagrama de Ojo')
     plt.xlabel('Muestras')
     plt.ylabel('Amplitud')
@@ -304,13 +285,6 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     #--------------------------------------------------------------
 
 
-
-
-    #se realiza la decodificacion con RS de ser necesario
-    print("Bits transmitidos:", encoded_data)
-    print("Bits detectados:", np.array(bits_rx))
-    print("Número de errores en dato codificado:", fn.contar_diferencias(encoded_data, bits_rx)[1])
-    print("Posiciones de los en dato codificado:", fn.contar_diferencias(encoded_data, bits_rx)[0])
 
     errores_RS = []
     simbolo_error = False
@@ -332,17 +306,15 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
 
     #Grafica la señal que fue decodificada
-    print('iteracion: ',iter)
-    print('tiempo actual: ',tiempo_actual)
     t_rx = np.arange(0, len(signal_to_decode)) * t_step + tiempo_actual
-    plt.figure(5)
+    plt.subplot(2, 2, 3)
     plt.plot(t_rx, signal_to_decode)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
     plt.title('Señal Filtrada')
     plt.grid(True)
-    plt.text(0.1, 0.9, f'Total Errores: {total_errores}', transform=plt.figure(5).transFigure, fontsize=12)
-    plt.text(0.6, 0.005, f'Bits transmitidos: {Ns+iter*Ns}', transform=plt.figure(5).transFigure, fontsize=12)
+    plt.text(0.5, 0.4, f'Bits transmitidos: {Ns+iter*Ns}', transform=plt.figure(2).transFigure, fontsize=12)
+    plt.text(0.5, 0.35, f'Total de errores (enviado vs recibido): {total_errores}', transform=plt.figure(2).transFigure, fontsize=12)
     plt.ylim(-2, 2)
 
 
