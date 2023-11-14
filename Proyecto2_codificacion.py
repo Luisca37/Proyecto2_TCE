@@ -29,7 +29,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     plt.figure(2).clear()
  
 
-    t_step = Ts / L
+    
     
    
     # 1. Generacion de onda del pulso
@@ -47,7 +47,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         encoded_data = data_bit
     Ns_code = len(encoded_data)
 
-    
+    #Ts = Ts*Ns/Ns_code
+    t_step = Ts / L
 
 
     match modulation:
@@ -217,18 +218,18 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     #grafica el diagrama de ojo------------------------------------------
     signal_len = len(filtro_acoplado)
-    num_bits = signal_len // L
-    eye_width = L
+    num_bits = signal_len // (L*2)  # Ajustado para dos símbolos
+    eye_width = L*2
 
     eye_diagram = np.zeros((num_bits, eye_width))
 
     for i in range(num_bits):
-        start = i * L
+        start = i * eye_width
         end = start + eye_width
         eye_diagram[i] = filtro_acoplado[start:end]
 
     # Graficar el diagrama de ojo
-    
+
     plt.subplot(2, 2, 2)
     plt.title('Diagrama de Ojo')
     plt.xlabel('Muestras')
@@ -237,6 +238,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     for i in range(eye_diagram.shape[0]):
         plt.plot(eye_diagram[i], label=f'Bit {i}')
+    #--------------------------------------------------------------
     #--------------------------------------------------------------
 
 
@@ -266,17 +268,17 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     #---------------Potencia de señales----------------#
     
-    pot_or=np.mean(np.square(encoded_data)) #potencia pulsos originales
-    pot_cod=np.mean(np.square(amp_modulated)) #potencia señal codificada
-    pot_pulsos=np.mean(np.square(impulse_modulated)) #potencia pulsos transmitidos
+    pot_or=round(np.mean(np.square(encoded_data)),3) #potencia pulsos originales
+    pot_cod=round(np.mean(np.square(amp_modulated)),3) #potencia señal codificada
+    pot_pulsos=round(np.mean(np.square(impulse_modulated)),3) #potencia pulsos transmitidos
     # Señal modulada continua
     t_continuo = np.linspace(0, Ns_code * Ts, Ns_code * L, endpoint=False)  # Tiempo continuo
 
     # Calcular la potencia de la señal continua
-    potencia_tx_continua = np.trapz(tx_signal**2, t_continuo) / (Ns_code * Ts) #transmitida
-    potencia_rx_continua = np.trapz(rx_signal**2, t_continuo) / (Ns_code * Ts) #recibida
-    potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts) #potencia filtro acoplado
-    potencia_to_decode = np.trapz(signal_to_decode**2, t_continuo) / (Ns_code * Ts) #potencia signal to decode
+    potencia_tx_continua = round(np.trapz(tx_signal**2, t_continuo) / (Ns_code * Ts),3) #transmitida
+    potencia_rx_continua = round(np.trapz(rx_signal**2, t_continuo) / (Ns_code * Ts),3) #recibida
+    potencia_acoplado_continua = round(np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts),3) #potencia filtro acoplado
+    potencia_to_decode = round(np.trapz(signal_to_decode**2, t_continuo) / (Ns_code * Ts),3) #potencia signal to decode
 
     print("\n--------------Potencia de señales-------------\n")
     print("Potencia pulsos originales: ",pot_or,"Vrms")

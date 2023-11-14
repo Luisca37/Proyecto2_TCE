@@ -9,7 +9,6 @@ def detector_umbral(señal, umbral, L):
     tiempos = []
     valores = []
     cont = L
-    umbral = 0
     for i, valor in enumerate(señal):
         if cont == L:
             if valor > umbral:
