@@ -76,23 +76,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
         t_p = np.arange(0, len(encoded_data)) + tiempo_actual
         t_p2=t_p
 
-    # Graficar la señal
-    fig = plt.figure(1)
-    fig.set_size_inches(12, 7)
-    fig.subplots_adjust(hspace=0.3, wspace=0.3)  # Ajusta el espacio entre los subplots
-    plt.subplot(2, 2, 1)
-    plt.plot(t_p, encoded_data, drawstyle='steps-post', label='Señal original')
-    plt.plot(t_p2, amp_modulated, drawstyle='steps-post', label='Señal modulada')
-    plt.xlabel('Tiempo')
-    plt.ylabel('Amplitud')
-    plt.title('Señal modulada')
-    plt.legend()
-    plt.grid()
-    
-
-
-
-    # 4. Modulacion de pulsos
+   
+       # 4. Modulacion de pulsos
     impulse_modulated = np.zeros(Ns_code * L)
 
 
@@ -121,30 +106,12 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     end = start + len(impulse_modulated)
     tx_signal = tx_signal_full[start:end]
 
-    # Grafica los pulsos
-    t_tx = np.arange(0, len(impulse_modulated)) * t_step + tiempo_actual
-    #plt.figure(2)
-    plt.subplot(2, 2, 2)
-    plt.plot(t_tx, impulse_modulated)
-    plt.xlabel('Tiempo (s)')
-    plt.ylabel('Amplitud')
-    plt.title('Pulsos')
-    plt.grid(True)
+    
 
 
 
-
-    # Grafica la señal transmitida
 
     
-    t_tx = np.arange(0, len(tx_signal)) * t_step + tiempo_actual
-    #plt.figure(3)
-    plt.subplot(2, 2, 3)
-    plt.plot(t_tx, tx_signal)
-    plt.xlabel('Tiempo (s)')
-    plt.ylabel('Amplitud')
-    plt.title('Señal Transmitida')
-    plt.grid(True)
 
     #----------------------------------------------------------#
     #-----------------------Canal------------------------------#
@@ -163,18 +130,6 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     isi_filter = np.ones(isi_length) / isi_length
 
     rx_signal = ss.convolve(tx_signal, isi_filter, mode='same')+randn_array[0]
-
-    
-
-    # Graficar la señal con ISI y ruido
-    t_rx = np.arange(0, len(rx_signal)) * t_step + tiempo_actual
-    #plt.figure(4)
-    plt.subplot(2, 2, 4)
-    plt.plot(t_rx, rx_signal)
-    plt.xlabel('Tiempo (s)')
-    plt.ylabel('Amplitud')
-    plt.title('Señal con ISI y ruido')
-    plt.grid(True)
 
     #----------------------------------------------------------#
     #----------------------Receptor----------------------------#
@@ -305,10 +260,37 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     
 
 
+
+
+
+
+    #---------------Potencia de señales----------------#
+    
+    pot_or=np.mean(np.square(encoded_data)) #potencia pulsos originales
+    pot_cod=np.mean(np.square(amp_modulated)) #potencia señal codificada
+    pot_pulsos=np.mean(np.square(impulse_modulated)) #potencia pulsos transmitidos
+    # Señal modulada continua
+    t_continuo = np.linspace(0, Ns_code * Ts, Ns_code * L, endpoint=False)  # Tiempo continuo
+
+    # Calcular la potencia de la señal continua
+    potencia_tx_continua = np.trapz(tx_signal**2, t_continuo) / (Ns_code * Ts) #transmitida
+    potencia_rx_continua = np.trapz(rx_signal**2, t_continuo) / (Ns_code * Ts) #recibida
+    potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts) #potencia filtro acoplado
+    potencia_to_decode = np.trapz(signal_to_decode**2, t_continuo) / (Ns_code * Ts) #potencia signal to decode
+
+    print("\n--------------Potencia de señales-------------\n")
+    print("Potencia pulsos originales: ",pot_or,"Vrms")
+    print("Potencia señal codificada: ",pot_cod,"Vrms")
+    print("Potencia pulsos transmitidos: ",pot_pulsos,"Vrms")
+    print("Potencia de la señal continua transmitida:", potencia_tx_continua,"Vrms")
+    print("Potencia de la señal con ISI y ruido:", potencia_rx_continua,"Vrms")
+    print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
+
     #Grafica la señal que fue decodificada
     t_rx = np.arange(0, len(signal_to_decode)) * t_step + tiempo_actual
     plt.subplot(2, 2, 3)
     plt.plot(t_rx, signal_to_decode)
+    plt.text(0.1, 0.01, f'Potencia señal filtrada: {potencia_to_decode} W', transform=plt.figure(2).transFigure, fontsize=10)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
     plt.title('Señal Filtrada')
@@ -318,29 +300,61 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     plt.ylim(-2, 2)
 
 
+#GRAFICAS--------------------------------------------------------------------------------------------------
+ # Graficar la señal
+    fig = plt.figure(1)
+    fig.set_size_inches(12, 6)
+    fig.subplots_adjust(hspace=0.37, wspace=0.37)  # Ajusta el espacio entre los subplots
+    plt.subplot(2, 2, 1)
+    plt.plot(t_p, encoded_data, drawstyle='steps-post', label='Señal original')
+    plt.text(0.1, 0.93, f'Potencia señal original: {pot_or} W', transform=plt.figure(1).transFigure, fontsize=10)
+    plt.plot(t_p2, amp_modulated, drawstyle='steps-post', label='Señal modulada')
+    plt.text(0.58, 0.93, f'Potencia señal codificada: {pot_cod} W', transform=plt.figure(1).transFigure, fontsize=10)
+    plt.xlabel('Tiempo')
+    plt.ylabel('Amplitud')
+    plt.title('Señal modulada')
+    plt.legend()
+    plt.grid()
 
+    # Grafica los pulsos
+    t_tx = np.arange(0, len(impulse_modulated)) * t_step + tiempo_actual
+    #plt.figure(2)
+    plt.subplot(2, 2, 2)
+    plt.plot(t_tx, impulse_modulated)
+    
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Pulsos')
+    plt.grid(True)
 
-    #---------------Potencia de señales----------------#
+    # Grafica la señal transmitida
 
+    
+    t_tx = np.arange(0, len(tx_signal)) * t_step + tiempo_actual
+    #plt.figure(3)
+    plt.subplot(2, 2, 3)
+    plt.plot(t_tx, tx_signal)
+    plt.text(0.1, 0.01, f'Potencia señal transmitida: {potencia_tx_continua} W', transform=plt.figure(1).transFigure, fontsize=10)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal Transmitida')
+    plt.grid(True)
 
-    print("\n--------------Potencia de señales-------------\n")
-    print("Potencia pulsos originales: ",np.mean(np.square(encoded_data)),"Vrms")
-    print("Potencia señal NRZ: ",np.mean(np.square(amp_modulated)),"Vrms")
-    print("Potencia pulsos transmitidos: ",np.mean(np.square(impulse_modulated)),"Vrms")
-    # Señal modulada continua
-    t_continuo = np.linspace(0, Ns_code * Ts, Ns_code * L, endpoint=False)  # Tiempo continuo
-
-    # Calcular la potencia de la señal continua
-    potencia_tx_continua = np.trapz(tx_signal**2, t_continuo) / (Ns_code * Ts)
-    print("Potencia de la señal continua transmitida:", potencia_tx_continua,"Vrms")
-
-    potencia_rx_continua = np.trapz(rx_signal**2, t_continuo) / (Ns_code * Ts)
-    print("Potencia de la señal con ISI y ruido:", potencia_rx_continua,"Vrms")
-
-    potencia_acoplado_continua = np.trapz(filtro_acoplado**2, t_continuo) / (Ns_code * Ts)
-    print("Potencia de la señal filtrada:", potencia_acoplado_continua,"Vrms")
+    # Graficar la señal con ISI y ruido
+    t_rx = np.arange(0, len(rx_signal)) * t_step + tiempo_actual
+    #plt.figure(4)
+    plt.subplot(2, 2, 4)
+    plt.plot(t_rx, rx_signal)
+    plt.text(0.58, 0.01, f'Potencia señal recibida: {potencia_rx_continua} W', transform=plt.figure(1).transFigure, fontsize=10)
+    plt.xlabel('Tiempo (s)')
+    plt.ylabel('Amplitud')
+    plt.title('Señal con ISI y ruido')
+    plt.grid(True)
 
     return total_errores, errores_RS, simbolo_error
+
+
+
 
 """
 #-----------Menu-------------------#
