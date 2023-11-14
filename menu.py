@@ -1,9 +1,11 @@
 import tkinter as tk
+from tkinter import scrolledtext
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import os
 from Proyecto2_codificacion import modem
+from PIL import Image, ImageTk
 
 def create_label_entry(parent, text, default_value, label_width, entry_width):
     # Crear el Label con texto en negrita, ancho fijo y alineado a la izquierda
@@ -56,9 +58,16 @@ def start_execution():
     global slider_value1, slider_value2
     output_text.delete('1.0', tk.END)
 
+    
+
     np.random.seed(324)
     # Obtener los valores de los widgets de la interfaz gráfica
     Ns = int(Ns_entry.get())
+    if Ns % 8 != 0:
+        error_msg = "Error: Número de bits por bloque debe ser un múltiplo de 8.\n"
+        output_text.insert(tk.END, error_msg, "error")  # Agrega el tag "error" al mensaje de error
+        return
+    
     Ts = float(Ts_entry.get())
     isi = slider_value1.get()
     ruido = slider_value2.get()
@@ -104,6 +113,16 @@ def start_execution():
 window = tk.Tk()
 window.title("Simulación de Modem")  # Añade un título a la ventana
 
+# Cargar la imagen de fondo
+'''
+background_image = Image.open("fondo.jpg")
+background_image = background_image.resize((800, 800), Image.ANTIALIAS)  # Ajusta el tamaño de la imagen al tamaño de la ventana
+background_photo = ImageTk.PhotoImage(background_image)
+
+# Crear un Label para mostrar la imagen de fondo
+background_label = tk.Label(window, image=background_photo)
+background_label.place(x=0, y=0, relwidth=1, relheight=1)  # Asegura que la imagen de fondo cubra toda la ventana
+'''
 
 code_var = tk.BooleanVar()
 ecualizador_var = tk.BooleanVar()
@@ -200,8 +219,12 @@ run_button = tk.Button(window, text="Ejecutar simulacion", command=start_executi
 run_button.pack()
 
 # Crear un widget de texto para mostrar la salida de la terminal
-output_text = tk.Text(window, wrap='word', height=20, font=font)  # Ajusta la fuente
+output_text = scrolledtext.ScrolledText(window, wrap='word', height=20, font=font)
 output_text.pack(fill='both', expand=True)
+
+# Agregar un tag "error" con formato rojo
+output_text.tag_configure("error", foreground="red")
+output_text.tag_configure("normal", foreground="black")
 
 # Redirigir la salida estándar al widget de texto
 sys.stdout = TextRedirector(output_text)
