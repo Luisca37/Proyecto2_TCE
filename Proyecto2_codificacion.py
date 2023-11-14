@@ -238,6 +238,8 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
 
     for i in range(eye_diagram.shape[0]):
         plt.plot(eye_diagram[i], label=f'Bit {i}')
+
+    plt.axvline(x=L, color='r', linestyle='--')
     #--------------------------------------------------------------
     #--------------------------------------------------------------
 

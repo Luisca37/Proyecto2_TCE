@@ -67,7 +67,6 @@ def start_execution():
         error_msg = "Error: Número de bits por bloque debe ser un múltiplo de 8.\n"
         output_text.insert(tk.END, error_msg, "error")  # Agrega el tag "error" al mensaje de error
         return
-    
     Ts = float(Ts_entry.get())
     isi = slider_value1.get()
     ruido = slider_value2.get()
