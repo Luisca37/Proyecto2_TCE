@@ -148,7 +148,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     if modulation == "nrz_u":
         filtro_acoplado /= np.sum(np.abs(pt))*0.8
     else:
-        filtro_acoplado /= np.sum(np.abs(pt)) #normalizacion
+        filtro_acoplado /= np.sum(np.abs(pt))*0.8 #normalizacion
 
 
     
