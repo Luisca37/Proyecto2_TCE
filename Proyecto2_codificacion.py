@@ -349,7 +349,7 @@ def modem(Ns, L, Ts, rolloff, ISI, ruido, codificacion, iter,total_errores, ecua
     #plt.figure(4)
     plt.subplot(2, 2, 4)
     plt.plot(t_rx, rx_signal)
-    plt.text(0.58, 0.01, f'Potencia señal recibida: {potencia_rx_continua} W', transform=plt.figure(1).transFigure, fontsize=10)
+    plt.text(0.58, 0.01, f'Potencia señal con ISI y ruido: {potencia_rx_continua} W', transform=plt.figure(1).transFigure, fontsize=10)
     plt.xlabel('Tiempo (s)')
     plt.ylabel('Amplitud')
     plt.title('Señal con ISI y ruido')
